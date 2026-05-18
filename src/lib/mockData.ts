@@ -7,6 +7,17 @@ export interface MediaItem {
   release_date: string;
   vote_average: number;
   type: 'movie' | 'tv';
+  genres?: { id: number; name: string }[];
+  runtime?: number;
+  number_of_seasons?: number;
+  number_of_episodes?: number;
+  seasons?: {
+    id: number;
+    name: string;
+    episode_count: number;
+    season_number: number;
+    poster_path: string | null;
+  }[];
 }
 
 export const trendingMovies: MediaItem[] = [

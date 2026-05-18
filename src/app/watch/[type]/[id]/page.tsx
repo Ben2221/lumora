@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import VidKingPlayer from '@/components/player/VidKingPlayer';
+
+function PlayerWithParams({ id, type }: { id: string; type: 'movie' | 'tv' }) {
+  const searchParams = useSearchParams();
+  const season = searchParams.get('season') || undefined;
+  const episode = searchParams.get('episode') || undefined;
+
+  return <VidKingPlayer id={id} type={type} season={season} episode={episode} />;
+}
 
 export default function WatchPage() {
   const params = useParams();
@@ -21,6 +29,24 @@ export default function WatchPage() {
       .then((data) => {
         if (data && data.title) {
           setTitle(data.title);
+          
+          // Save to LocalStorage for Continue Watching feature
+          try {
+            const continueList = JSON.parse(localStorage.getItem('lumora_continue_watching') || '[]');
+            const newItem = {
+              id: data.id,
+              title: data.title,
+              type: type,
+              poster_path: data.poster_path,
+              backdrop_path: data.backdrop_path,
+              vote_average: data.vote_average || 8,
+              release_date: data.release_date || '2024'
+            };
+            const updated = [newItem, ...continueList.filter((item: any) => item.id !== data.id)].slice(0, 10);
+            localStorage.setItem('lumora_continue_watching', JSON.stringify(updated));
+          } catch (e) {
+            console.error('Error writing continue watching list', e);
+          }
         } else {
           setTitle('Watch Live');
         }
@@ -45,7 +71,13 @@ export default function WatchPage() {
 
       {/* Player Container */}
       <div className="flex-1 w-full relative group">
-        <VidKingPlayer id={id} type={type} />
+        <Suspense fallback={
+          <div className="w-full h-full bg-black flex items-center justify-center">
+            <p className="text-gray-400 font-medium">Initializing Player...</p>
+          </div>
+        }>
+          <PlayerWithParams id={id} type={type} />
+        </Suspense>
         
         {/* Helper overlay to make top header show on hover near top */}
         <div className="absolute top-0 left-0 w-full h-32 z-40 bg-transparent" />

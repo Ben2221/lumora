@@ -35,6 +35,7 @@ export default function VidKingPlayer({ id, type, season, episode }: VidKingPlay
         height="100%"
         frameBorder="0"
         allowFullScreen
+        allow="autoplay; encrypted-media"
         onLoad={() => setIsLoading(false)}
         className={`w-full h-full transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
       />

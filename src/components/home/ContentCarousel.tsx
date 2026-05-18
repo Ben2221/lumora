@@ -44,7 +44,7 @@ export default function ContentCarousel({ title, items, isTop10 = false }: Carou
         {/* Media Row */}
         <div 
           ref={rowRef} 
-          className={`flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar scroll-smooth pr-4 sm:pr-6 lg:pr-8 pb-4 ${isTop10 ? 'pl-6 sm:pl-10' : ''}`}
+          className={`flex items-center gap-2 sm:gap-4 overflow-x-auto overflow-y-hidden no-scrollbar scroll-smooth pr-4 sm:pr-6 lg:pr-8 py-6 -my-6 ${isTop10 ? 'pl-6 sm:pl-10' : ''}`}
         >
           {items.map((item, index) => (
             isTop10 
