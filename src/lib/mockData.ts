@@ -18,6 +18,7 @@ export interface MediaItem {
     season_number: number;
     poster_path: string | null;
   }[];
+  trailer_key?: string | null;
 }
 
 export const trendingMovies: MediaItem[] = [

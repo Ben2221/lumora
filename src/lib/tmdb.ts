@@ -146,7 +146,7 @@ export async function getTVSeasonEpisodes(tvId: string, seasonNumber: number): P
 }
 
 export async function getMediaDetails(id: string, type: 'movie' | 'tv'): Promise<MediaItem | null> {
-  const data = await fetchFromTMDB(`/${type}/${id}`);
+  const data = await fetchFromTMDB(`/${type}/${id}?append_to_response=videos`);
   if (!data) {
     // Attempt to search local mock data
     const mockMatch = [...trendingMovies, ...newReleases].find(m => m.id === parseInt(id));
@@ -160,12 +160,19 @@ export async function getMediaDetails(id: string, type: 'movie' | 'tv'): Promise
         seasons: type === 'tv' ? [
           { id: 1, name: 'Season 1', episode_count: 8, season_number: 1, poster_path: mockMatch.poster_path },
           { id: 2, name: 'Season 2', episode_count: 8, season_number: 2, poster_path: mockMatch.poster_path }
-        ] : undefined
+        ] : undefined,
+        trailer_key: 'zSWdZVtXT7E' // Premium Interstellar HD trailer fallback
       };
     }
     return null;
   }
   
+  // Find trailer key
+  const trailerVideo = data.videos?.results?.find(
+    (v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser' || v.type === 'Clip')
+  );
+  const trailerKey = trailerVideo ? trailerVideo.key : null;
+
   return {
     id: data.id,
     title: data.title || data.name || 'Untitled',
@@ -179,7 +186,8 @@ export async function getMediaDetails(id: string, type: 'movie' | 'tv'): Promise
     runtime: data.runtime,
     number_of_seasons: data.number_of_seasons,
     number_of_episodes: data.number_of_episodes,
-    seasons: data.seasons || []
+    seasons: data.seasons || [],
+    trailer_key: trailerKey
   };
 }
 
