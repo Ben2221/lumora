@@ -60,12 +60,12 @@ export default async function Home() {
     getOscarNominees()
   ]);
   
-  const heroMovie = trending[0] || newReleasesList[0];
+  const heroMovies = trending.slice(0, 5);
 
   return (
     <main className="min-h-screen bg-black overflow-hidden">
       <Navbar />
-      {heroMovie && <Hero movie={heroMovie} />}
+      {heroMovies.length > 0 && <Hero movies={heroMovies} />}
       
       <div className="relative z-30 -mt-24 sm:-mt-32 pb-20 space-y-10">
         {/* Dynamic Client rows */}
