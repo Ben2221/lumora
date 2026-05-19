@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
-  Dimensions, 
-  Platform 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Dimensions,
+  Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Play, Info, Plus, Check } from 'lucide-react-native';
-import { 
-  trendingMovies, 
-  newReleases, 
-  mockTVShows, 
+import {
+  trendingMovies,
+  newReleases,
+  mockTVShows,
   MediaItem,
   lumoraOriginals,
   topRatedMovies,
@@ -127,20 +127,20 @@ export default function HomeScreen() {
     return (
       <View style={styles.rowContainer}>
         <Text style={styles.rowTitle}>{title}</Text>
-        <ScrollView 
-          horizontal 
+        <ScrollView
+          horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.rowScroll}
         >
           {filteredData.map((item) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={item.id}
               activeOpacity={0.8}
               onPress={() => handleMediaPress(item)}
               style={styles.cardContainer}
             >
-              <Image 
-                source={{ uri: item.poster_path }} 
+              <Image
+                source={{ uri: item.poster_path }}
                 style={styles.cardImage}
                 contentFit="cover"
               />
@@ -161,9 +161,9 @@ export default function HomeScreen() {
       {/* Top Header Filter Navigation */}
       <View style={[styles.header, { paddingTop: safeAreaInsets.top > 0 ? safeAreaInsets.top + 12 : 40 }]}>
         <Text style={styles.logoText}>LUMORA</Text>
-        
+
         <View style={styles.filterRow}>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setActiveFilter('all')}
             style={[styles.filterButton, activeFilter === 'all' && styles.filterButtonActive]}
           >
@@ -171,7 +171,7 @@ export default function HomeScreen() {
               All
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setActiveFilter('movies')}
             style={[styles.filterButton, activeFilter === 'movies' && styles.filterButtonActive]}
           >
@@ -179,7 +179,7 @@ export default function HomeScreen() {
               Movies
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setActiveFilter('tv')}
             style={[styles.filterButton, activeFilter === 'tv' && styles.filterButtonActive]}
           >
@@ -211,18 +211,18 @@ export default function HomeScreen() {
 
               return (
                 <View key={item.id} style={[styles.heroContainer, { width }]}>
-                  <Image 
-                    source={{ uri: item.backdrop_path }} 
+                  <Image
+                    source={{ uri: item.backdrop_path }}
                     style={styles.heroImage}
                     contentFit="cover"
                   />
                   <View style={styles.heroOverlay} />
-                  
+
                   <View style={styles.heroInfoWrapper}>
                     <Text style={styles.heroTitle} numberOfLines={2}>
                       {item.title}
                     </Text>
-                    
+
                     <View style={styles.heroMeta}>
                       <Text style={styles.heroMetaMatch}>98% Match</Text>
                       <Text style={styles.heroMetaText}>
@@ -235,7 +235,7 @@ export default function HomeScreen() {
 
                     {/* Play / List trigger actions */}
                     <View style={styles.heroActionsRow}>
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         activeOpacity={0.8}
                         onPress={handleToggleItemWatchlist}
                         style={styles.heroActionBtn}
@@ -250,7 +250,7 @@ export default function HomeScreen() {
                         </Text>
                       </TouchableOpacity>
 
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         activeOpacity={0.9}
                         onPress={() => {
                           const playUrl = item.type === 'tv'
@@ -264,7 +264,7 @@ export default function HomeScreen() {
                         <Text style={styles.heroPlayBtnText}>Play</Text>
                       </TouchableOpacity>
 
-                      <TouchableOpacity 
+                      <TouchableOpacity
                         activeOpacity={0.8}
                         onPress={() => handleMediaPress(item)}
                         style={styles.heroActionBtn}
@@ -318,6 +318,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#e50914',
     letterSpacing: -1.2,
+    fontFamily: 'Outfit-Black',
   },
   filterRow: {
     flexDirection: 'row',
@@ -341,6 +342,7 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontSize: 12,
     fontWeight: 'bold',
+    fontFamily: 'Outfit-Bold',
   },
   filterButtonTextActive: {
     color: '#fff',
@@ -375,8 +377,9 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     paddingHorizontal: Spacing.four,
-    paddingBottom: 22,
+    paddingBottom: Spacing.five,
     backgroundColor: 'rgba(0,0,0,0.65)',
+    padding: 5
   },
   heroTitle: {
     fontSize: 28,
@@ -387,6 +390,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
+    fontFamily: 'Outfit-Black',
   },
   heroMeta: {
     flexDirection: 'row',
@@ -398,11 +402,13 @@ const styles = StyleSheet.create({
     color: '#46d369',
     fontWeight: 'bold',
     fontSize: 13,
+    fontFamily: 'Inter-Bold',
   },
   heroMetaText: {
     color: '#B0B4BA',
     fontSize: 13,
     fontWeight: '500',
+    fontFamily: 'Inter-Medium',
   },
   heroActionsRow: {
     flexDirection: 'row',
@@ -427,6 +433,7 @@ const styles = StyleSheet.create({
     color: '#000',
     fontWeight: '900',
     fontSize: 16,
+    fontFamily: 'Outfit-Bold',
   },
   heroActionBtn: {
     alignItems: 'center',
@@ -439,6 +446,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
     marginTop: 2,
+    fontFamily: 'Outfit-SemiBold',
   },
   rowContainer: {
     marginTop: Spacing.four,
@@ -449,6 +457,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     paddingHorizontal: Spacing.four,
     marginBottom: Spacing.two,
+    fontFamily: 'Outfit-Bold',
   },
   rowScroll: {
     paddingLeft: Spacing.four,
@@ -482,6 +491,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 6,
     fontWeight: 'bold',
+    fontFamily: 'Inter-Bold',
   },
   heroWrapper: {
     width: '100%',

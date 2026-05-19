@@ -194,6 +194,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     padding: 0, // Reset standard input padding
+    fontFamily: 'Inter-Medium',
   },
   resultsLabel: {
     color: '#fff',
@@ -202,6 +203,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
     paddingBottom: Spacing.two,
+    fontFamily: 'Outfit-Bold',
   },
   gridContent: {
     paddingHorizontal: Spacing.four,
@@ -239,5 +241,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 6,
     fontWeight: 'bold',
+    fontFamily: 'Inter-Bold',
   },
 });

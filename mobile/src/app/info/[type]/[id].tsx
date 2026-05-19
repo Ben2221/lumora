@@ -468,6 +468,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#e50914',
     letterSpacing: -1.5,
+    fontFamily: 'Outfit-Black',
   },
   loadingText: {
     color: '#B0B4BA',
@@ -475,6 +476,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: Spacing.two,
     letterSpacing: 0.5,
+    fontFamily: 'Inter-SemiBold',
   },
   scrollContainer: {
     paddingBottom: 40,
@@ -516,6 +518,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#fff',
     marginBottom: Spacing.two,
+    fontFamily: 'Outfit-Black',
   },
   metadataRow: {
     flexDirection: 'row',
@@ -528,6 +531,7 @@ const styles = StyleSheet.create({
     color: '#46d369',
     fontWeight: 'bold',
     fontSize: 14,
+    fontFamily: 'Inter-Bold',
   },
   metaBadge: {
     flexDirection: 'row',
@@ -542,6 +546,7 @@ const styles = StyleSheet.create({
     color: '#B0B4BA',
     fontSize: 11,
     fontWeight: 'bold',
+    fontFamily: 'Inter-Bold',
   },
   playButton: {
     flexDirection: 'row',
@@ -557,6 +562,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: 'Outfit-Bold',
   },
   listButton: {
     flexDirection: 'row',
@@ -578,12 +584,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: 'Outfit-Bold',
   },
   overview: {
     fontSize: 14,
     lineHeight: 22,
     fontWeight: '400',
     marginBottom: Spacing.four,
+    fontFamily: 'Inter-Regular',
   },
   creatorRow: {
     flexDirection: 'row',
@@ -591,12 +599,14 @@ const styles = StyleSheet.create({
   },
   metaLabel: {
     fontSize: 13,
+    fontFamily: 'Inter-Regular',
   },
   creatorValue: {
     fontSize: 13,
     color: '#e50914',
     fontWeight: 'bold',
     textDecorationLine: 'underline',
+    fontFamily: 'Outfit-Bold',
   },
   sectionContainer: {
     marginTop: Spacing.two,
@@ -607,6 +617,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: Spacing.three,
+    fontFamily: 'Outfit-Bold',
   },
   castScroll: {
     gap: Spacing.three,
@@ -639,16 +650,19 @@ const styles = StyleSheet.create({
     color: '#B0B4BA',
     fontWeight: 'bold',
     fontSize: 14,
+    fontFamily: 'Inter-Bold',
   },
   castName: {
     color: '#fff',
     fontSize: 11,
     fontWeight: 'bold',
     textAlign: 'center',
+    fontFamily: 'Outfit-SemiBold',
   },
   castCharacter: {
     fontSize: 10,
     textAlign: 'center',
+    fontFamily: 'Inter-Regular',
   },
   seasonContainer: {
     marginTop: Spacing.two,
@@ -669,6 +683,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
+    fontFamily: 'Outfit-Bold',
   },
   episodeList: {
     gap: Spacing.two,
@@ -694,6 +709,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '900',
     width: 20,
+    fontFamily: 'Outfit-Black',
   },
   episodeMeta: {
     justifyContent: 'center',
@@ -702,10 +718,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+    fontFamily: 'Outfit-SemiBold',
   },
   episodeDuration: {
     fontSize: 11,
     marginTop: 2,
+    fontFamily: 'Inter-Medium',
   },
   modalOverlay: {
     flex: 1,
@@ -732,6 +750,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: 'Outfit-Bold',
   },
   modalOption: {
     flexDirection: 'row',
@@ -749,14 +768,17 @@ const styles = StyleSheet.create({
     color: '#B0B4BA',
     fontSize: 15,
     fontWeight: '500',
+    fontFamily: 'Outfit-Medium',
   },
   modalOptionTextActive: {
     color: '#e50914',
     fontWeight: 'bold',
+    fontFamily: 'Outfit-Bold',
   },
   modalOptionCount: {
     color: '#60646C',
     fontSize: 12,
+    fontFamily: 'Inter-Medium',
   },
   episodeImage: {
     width: 80,
@@ -768,6 +790,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
     maxWidth: width - 180,
+    fontFamily: 'Inter-Regular',
   },
   similarContainer: {
     marginTop: Spacing.four,

@@ -95,6 +95,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#e50914',
     letterSpacing: 0.5,
+    fontFamily: 'Outfit-Black',
   },
   listContainer: {
     paddingHorizontal: Spacing.four,
@@ -132,6 +133,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 8,
     fontWeight: 'bold',
+    fontFamily: 'Inter-Bold',
   },
   emptyContainer: {
     flex: 1,
@@ -144,6 +146,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'center',
     marginBottom: Spacing.four,
+    fontFamily: 'Inter-Medium',
   },
   exploreButton: {
     backgroundColor: '#e50914',
@@ -155,5 +158,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+    fontFamily: 'Outfit-Bold',
   },
 });
