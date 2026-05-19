@@ -31,6 +31,7 @@ export default function WatchScreen() {
   const [media, setMedia] = useState<MediaItem | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showControls, setShowControls] = useState(true);
 
   // Lock orientation to Landscape when playing video, unlock on unmount
   useEffect(() => {
@@ -53,6 +54,16 @@ export default function WatchScreen() {
       unlock();
     };
   }, []);
+
+  // Auto-hide controls after 4 seconds of inactivity if playing
+  useEffect(() => {
+    if (!isPaused && showControls) {
+      const timer = setTimeout(() => {
+        setShowControls(false);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [showControls, isPaused]);
 
   // Construct URL based on VidKing API docs
   let playerUrl = `https://www.vidking.net/embed/${type}/${id}`;
@@ -142,8 +153,17 @@ export default function WatchScreen() {
         const status = data.event || data.status;
         if (status === 'pause' || status === 'paused') {
           setIsPaused(true);
+          setShowControls(true); // Always show back button and info overlay when paused
         } else if (status === 'play' || status === 'playing') {
           setIsPaused(false);
+          setShowControls(false); // Auto-hide on play
+        } else if (data.event === 'webview_click') {
+          if (!isPaused) {
+            // Tapping outside the center play/pause region toggles the overlays
+            if (!data.isCenter) {
+              setShowControls(prev => !prev);
+            }
+          }
         }
       }
     } catch (e) {
@@ -161,6 +181,24 @@ export default function WatchScreen() {
         document.getElementsByTagName('head')[0].appendChild(meta);
       }
       meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+
+      // Intercept click events to communicate outside-center taps to React Native controls
+      document.addEventListener('click', function(e) {
+        var rect = document.documentElement.getBoundingClientRect();
+        var width = window.innerWidth || rect.width;
+        var height = window.innerHeight || rect.height;
+        
+        // Taps in the center 40% horizontal & 60% vertical area are considered center plays/pauses
+        var isCenter = (e.clientX > width * 0.3 && e.clientX < width * 0.7) &&
+                       (e.clientY > height * 0.2 && e.clientY < height * 0.8);
+                       
+        try {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            event: 'webview_click',
+            isCenter: isCenter
+          }));
+        } catch(err) {}
+      });
 
       window.addEventListener('message', function(event) {
         if (event.origin.includes('vidking.net') || event.origin.includes('vidking')) {
@@ -183,16 +221,18 @@ export default function WatchScreen() {
   return (
     <View style={[styles.container, { backgroundColor: '#000' }]}>
       {/* Floating Back Header Panel */}
-      <View style={[styles.headerOverlay, { paddingTop: Math.max(safeAreaInsets.top, Spacing.three) }]}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <ArrowLeft color="#fff" size={20} />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-      </View>
+      {showControls && (
+        <View style={[styles.headerOverlay, { paddingTop: Math.max(safeAreaInsets.top, Spacing.three) }]}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <ArrowLeft color="#fff" size={20} />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <WebView
         ref={webviewRef}
@@ -208,6 +248,11 @@ export default function WatchScreen() {
         injectedJavaScript={injectedJS}
         onMessage={onMessage}
         onLoadEnd={() => setIsLoading(false)}
+        nestedScrollEnabled={true}
+        allowsBackForwardNavigationGestures={false}
+        overScrollMode="never"
+        showsHorizontalScrollIndicator={false}
+        showsVerticalScrollIndicator={false}
         userAgent="Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Mobile Safari/537.36"
       />
 
