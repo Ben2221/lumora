@@ -239,14 +239,25 @@ export default function InfoScreen() {
 
           {/* Director details */}
           {media.director && (
-            <TouchableOpacity 
-              activeOpacity={0.7}
-              onPress={() => handleCastClick(media.director!)}
-              style={styles.creatorRow}
-            >
+            <Text style={styles.creatorRow}>
               <Text style={[styles.metaLabel, { color: theme.textSecondary }]}>Director: </Text>
-              <Text style={styles.creatorValue}>{media.director}</Text>
-            </TouchableOpacity>
+              {media.director.split(',').map((name, index, array) => {
+                const trimmedName = name.trim();
+                return (
+                  <React.Fragment key={trimmedName}>
+                    <Text 
+                      style={styles.creatorValue} 
+                      onPress={() => handleCastClick(trimmedName)}
+                    >
+                      {trimmedName}
+                    </Text>
+                    {index < array.length - 1 && (
+                      <Text style={[styles.metaLabel, { color: theme.textSecondary }]}>, </Text>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </Text>
           )}
 
           {/* Cast Cards */}
