@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { ArrowLeft, Play } from 'lucide-react-native';
 import { Image } from 'expo-image';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getMediaDetails } from '@/services/tmdb';
@@ -30,6 +31,28 @@ export default function WatchScreen() {
   const [media, setMedia] = useState<MediaItem | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Lock orientation to Landscape when playing video, unlock on unmount
+  useEffect(() => {
+    const lockLandscape = async () => {
+      try {
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+      } catch (e) {
+        console.warn('Failed to lock screen orientation to landscape:', e);
+      }
+    };
+    lockLandscape();
+    return () => {
+      const unlock = async () => {
+        try {
+          await ScreenOrientation.unlockAsync();
+        } catch (e) {
+          console.warn('Failed to unlock screen orientation:', e);
+        }
+      };
+      unlock();
+    };
+  }, []);
 
   // Construct URL based on VidKing API docs
   let playerUrl = `https://www.vidking.net/embed/${type}/${id}`;
@@ -130,6 +153,15 @@ export default function WatchScreen() {
 
   const injectedJS = `
     (function() {
+      // Inject viewport meta tag to prevent options from scaling to fill the entire screen
+      var meta = document.querySelector('meta[name="viewport"]');
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = 'viewport';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+      }
+      meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+
       window.addEventListener('message', function(event) {
         if (event.origin.includes('vidking.net') || event.origin.includes('vidking')) {
           try {
@@ -197,14 +229,10 @@ export default function WatchScreen() {
           <View style={styles.pauseGradient} />
 
           <View style={styles.pauseContent}>
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={handlePlayClick}
-              style={styles.resumeBtn}
-            >
+            <View style={styles.resumeBtn}>
               <Play color="#fff" size={20} fill="#fff" />
               <Text style={styles.resumeBtnText}>Resume Playback</Text>
-            </TouchableOpacity>
+            </View>
 
             <View style={styles.pauseMeta}>
               <View style={styles.badge}>
