@@ -33,7 +33,7 @@ export default function WatchScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
 
-  // Lock orientation to Landscape when playing video, unlock on unmount
+  // Lock orientation to Landscape when playing video, lock back to Portrait on unmount
   useEffect(() => {
     const lockLandscape = async () => {
       try {
@@ -44,14 +44,14 @@ export default function WatchScreen() {
     };
     lockLandscape();
     return () => {
-      const unlock = async () => {
+      const lockPortrait = async () => {
         try {
-          await ScreenOrientation.unlockAsync();
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
         } catch (e) {
-          console.warn('Failed to unlock screen orientation:', e);
+          console.warn('Failed to lock screen orientation back to portrait:', e);
         }
       };
-      unlock();
+      lockPortrait();
     };
   }, []);
 
