@@ -52,7 +52,7 @@ async function fetchFromTMDB(endpoint: string) {
     return json;
   } catch (error: any) {
     clearTimeout(timeoutId);
-    console.error(`TMDB Fetch Error at ${endpoint}:`, error.message || error);
+    console.warn(`TMDB Fetch Warning at ${endpoint}:`, error.message || error);
     
     // Fallback to expired cache on network failure or timeout/abort
     if (cached) {
