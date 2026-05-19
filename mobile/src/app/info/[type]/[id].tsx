@@ -415,11 +415,10 @@ export default function InfoScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalHeaderTitle}>Select Season</Text>
             </View>
-            <FlatList
-              data={media.seasons}
-              keyExtractor={(item) => item.id.toString()}
-              renderItem={({ item }) => (
+            <ScrollView contentContainerStyle={{ paddingBottom: Spacing.four }}>
+              {(media.seasons || []).map((item, index) => (
                 <TouchableOpacity
+                  key={item.id?.toString() || item.season_number?.toString() || index.toString()}
                   activeOpacity={0.8}
                   style={[
                     styles.modalOption,
@@ -434,14 +433,14 @@ export default function InfoScreen() {
                     styles.modalOptionText,
                     selectedSeason === item.season_number && styles.modalOptionTextActive
                   ]}>
-                    Season {item.season_number}
+                    {item.name || `Season ${item.season_number}`}
                   </Text>
                   <Text style={styles.modalOptionCount}>
                     {item.episode_count} Episodes
                   </Text>
                 </TouchableOpacity>
-              )}
-            />
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
