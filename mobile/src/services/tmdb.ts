@@ -40,24 +40,69 @@ export async function getHomeLists(): Promise<{
   originals: MediaItem[];
   blockbusters: MediaItem[];
   comedies: MediaItem[];
+  scifi: MediaItem[];
+  action: MediaItem[];
+  mystery: MediaItem[];
+  horror: MediaItem[];
+  romance: MediaItem[];
+  crime: MediaItem[];
+  fantasy: MediaItem[];
+  kids: MediaItem[];
+  oscar: MediaItem[];
 }> {
   try {
-    const [trendingData, originalsData, blockbustersData, comediesData] = await Promise.all([
+    const [
+      trendingData,
+      originalsData,
+      blockbustersData,
+      comediesData,
+      scifiData,
+      actionData,
+      mysteryData,
+      horrorData,
+      romanceData,
+      crimeData,
+      fantasyData,
+      kidsData,
+      oscarData
+    ] = await Promise.all([
       fetchFromTMDB('/trending/all/week'),
       fetchFromTMDB('/discover/tv?with_networks=213'),
       fetchFromTMDB('/movie/top_rated'),
-      fetchFromTMDB('/discover/movie?with_genres=35')
+      fetchFromTMDB('/discover/movie?with_genres=35'),
+      fetchFromTMDB('/discover/movie?with_genres=878'),
+      fetchFromTMDB('/discover/movie?with_genres=28'),
+      fetchFromTMDB('/discover/movie?with_genres=9648,53'),
+      fetchFromTMDB('/discover/movie?with_genres=27'),
+      fetchFromTMDB('/discover/movie?with_genres=10749'),
+      fetchFromTMDB('/discover/movie?with_genres=80'),
+      fetchFromTMDB('/discover/movie?with_genres=14'),
+      fetchFromTMDB('/discover/movie?with_genres=10751,16'),
+      fetchFromTMDB('/discover/movie?sort_by=vote_average.desc&vote_count.gte=5000')
     ]);
 
     return {
       trending: mapTMDBResults(trendingData?.results || []),
       originals: mapTMDBResults(originalsData?.results || [], 'tv'),
       blockbusters: mapTMDBResults(blockbustersData?.results || [], 'movie'),
-      comedies: mapTMDBResults(comediesData?.results || [], 'movie')
+      comedies: mapTMDBResults(comediesData?.results || [], 'movie'),
+      scifi: mapTMDBResults(scifiData?.results || [], 'movie'),
+      action: mapTMDBResults(actionData?.results || [], 'movie'),
+      mystery: mapTMDBResults(mysteryData?.results || [], 'movie'),
+      horror: mapTMDBResults(horrorData?.results || [], 'movie'),
+      romance: mapTMDBResults(romanceData?.results || [], 'movie'),
+      crime: mapTMDBResults(crimeData?.results || [], 'movie'),
+      fantasy: mapTMDBResults(fantasyData?.results || [], 'movie'),
+      kids: mapTMDBResults(kidsData?.results || [], 'movie'),
+      oscar: mapTMDBResults(oscarData?.results || [], 'movie')
     };
   } catch (e) {
     console.warn('Failed to load standalone lists, returning fallback empty lists', e);
-    return { trending: [], originals: [], blockbusters: [], comedies: [] };
+    return {
+      trending: [], originals: [], blockbusters: [], comedies: [],
+      scifi: [], action: [], mystery: [], horror: [], romance: [],
+      crime: [], fantasy: [], kids: [], oscar: []
+    };
   }
 }
 

@@ -44,11 +44,29 @@ export default function HomeScreen() {
     originals: MediaItem[];
     blockbusters: MediaItem[];
     comedies: MediaItem[];
+    scifi: MediaItem[];
+    action: MediaItem[];
+    mystery: MediaItem[];
+    horror: MediaItem[];
+    romance: MediaItem[];
+    crime: MediaItem[];
+    fantasy: MediaItem[];
+    kids: MediaItem[];
+    oscar: MediaItem[];
   }>({
     trending: trendingMovies,
     originals: lumoraOriginals,
     blockbusters: topRatedMovies,
     comedies: comedyMovies,
+    scifi: newReleases,
+    action: trendingMovies,
+    mystery: trendingMovies,
+    horror: newReleases,
+    romance: trendingMovies,
+    crime: trendingMovies,
+    fantasy: newReleases,
+    kids: newReleases,
+    oscar: topRatedMovies,
   });
 
   useEffect(() => {
@@ -62,6 +80,15 @@ export default function HomeScreen() {
             originals: data.originals.length > 0 ? data.originals : lumoraOriginals,
             blockbusters: data.blockbusters.length > 0 ? data.blockbusters : topRatedMovies,
             comedies: data.comedies.length > 0 ? data.comedies : comedyMovies,
+            scifi: data.scifi.length > 0 ? data.scifi : newReleases,
+            action: data.action.length > 0 ? data.action : trendingMovies,
+            mystery: data.mystery.length > 0 ? data.mystery : trendingMovies,
+            horror: data.horror.length > 0 ? data.horror : newReleases,
+            romance: data.romance.length > 0 ? data.romance : trendingMovies,
+            crime: data.crime.length > 0 ? data.crime : trendingMovies,
+            fantasy: data.fantasy.length > 0 ? data.fantasy : newReleases,
+            kids: data.kids.length > 0 ? data.kids : newReleases,
+            oscar: data.oscar.length > 0 ? data.oscar : topRatedMovies,
           });
         }
       } catch (err) {
@@ -257,6 +284,15 @@ export default function HomeScreen() {
         {continueWatchingList.length > 0 && renderMediaRow("Continue Watching", continueWatchingList)}
         {activeFilter !== 'movies' && renderMediaRow("Only on Lumora", lists.originals)}
         {renderMediaRow("Trending Now", lists.trending)}
+        {renderMediaRow("Sci-Fi & Fantasy", lists.scifi)}
+        {renderMediaRow("Action Thrillers", lists.action)}
+        {renderMediaRow("Mystery & Thriller", lists.mystery)}
+        {renderMediaRow("Oscar Nominees", lists.oscar)}
+        {renderMediaRow("Horror Hits", lists.horror)}
+        {renderMediaRow("Romance", lists.romance)}
+        {renderMediaRow("Crime & Drama", lists.crime)}
+        {renderMediaRow("Fantasy Kingdoms", lists.fantasy)}
+        {renderMediaRow("Kids & Family", lists.kids)}
         {activeFilter !== 'tv' && renderMediaRow("Blockbuster Movies", lists.blockbusters)}
         {renderMediaRow("Popular Comedies", lists.comedies)}
       </ScrollView>
