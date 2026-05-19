@@ -15,7 +15,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Lumora - Watch Movies & TV Shows",
+  title: "Lumora",
   description: "Premium streaming platform for the best movies and TV shows.",
 };
 
