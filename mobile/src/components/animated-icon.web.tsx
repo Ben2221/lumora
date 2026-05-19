@@ -93,7 +93,7 @@ export function AnimatedSplashOverlay() {
           <Text style={styles.tagline}>Stream the Extraordinary</Text>
         </Animated.View>
         
-        <ActivityIndicator size="small" color="#e50914" style={styles.spinner} />
+        <ActivityIndicator size="large" color="#e50914" style={styles.spinner} />
       </View>
     </Animated.View>
   );
