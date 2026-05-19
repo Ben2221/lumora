@@ -22,7 +22,7 @@ import {
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { TabBar } from '@/components/TabBar';
-import { API_BASE_URL } from '@/constants/api';
+import { searchMedia } from '@/services/tmdb';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - Spacing.four * 2 - Spacing.two * 2) / 3;
@@ -50,11 +50,9 @@ export default function ExploreScreen() {
     let active = true;
     const delayDebounce = setTimeout(async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(trimmed)}`);
-        if (!res.ok) throw new Error('Search failed');
-        const json = await res.json();
-        if (active && json) {
-          setResults(json);
+        const data = await searchMedia(trimmed);
+        if (active && data) {
+          setResults(data);
         }
       } catch (err) {
         console.warn('[Search] Fallback to local search filter:', err);

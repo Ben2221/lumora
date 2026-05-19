@@ -23,7 +23,7 @@ import {
 } from '@/constants/mockData';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { useContinueWatching } from '@/hooks/useContinueWatching';
-import { API_BASE_URL } from '@/constants/api';
+import { getHomeLists } from '@/services/tmdb';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { TabBar } from '@/components/TabBar';
@@ -55,15 +55,13 @@ export default function HomeScreen() {
     let active = true;
     const fetchLists = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/media/lists`);
-        if (!res.ok) throw new Error('HTTP Error: ' + res.status);
-        const json = await res.json();
-        if (active && json) {
+        const data = await getHomeLists();
+        if (active && data) {
           setLists({
-            trending: json.trending && json.trending.length > 0 ? json.trending : trendingMovies,
-            originals: json.originals && json.originals.length > 0 ? json.originals : lumoraOriginals,
-            blockbusters: json.blockbusters && json.blockbusters.length > 0 ? json.blockbusters : topRatedMovies,
-            comedies: json.comedies && json.comedies.length > 0 ? json.comedies : comedyMovies,
+            trending: data.trending.length > 0 ? data.trending : trendingMovies,
+            originals: data.originals.length > 0 ? data.originals : lumoraOriginals,
+            blockbusters: data.blockbusters.length > 0 ? data.blockbusters : topRatedMovies,
+            comedies: data.comedies.length > 0 ? data.comedies : comedyMovies,
           });
         }
       } catch (err) {
@@ -77,26 +75,16 @@ export default function HomeScreen() {
     };
   }, []);
 
-  // Featured Hero Item (Interstellar or Squid Game depending on filter)
-  const heroItem: MediaItem = activeFilter === 'tv'
-    ? (lists.originals.length > 0 ? lists.originals[0] : mockTVShows[0])
-    : (lists.trending.length > 0 ? lists.trending[0] : trendingMovies[0]);
+  // Get top 5 featured items for the Hero carousel
+  const heroItems = activeFilter === 'tv'
+    ? lists.originals.slice(0, 5)
+    : lists.trending.slice(0, 5);
 
   const handleMediaPress = (item: MediaItem) => {
     router.push({
       pathname: '/info/[type]/[id]',
       params: { type: item.type, id: item.id.toString() }
     });
-  };
-
-  const isHeroBookmarked = isInWatchlist(heroItem.id);
-
-  const handleToggleHeroWatchlist = () => {
-    if (isHeroBookmarked) {
-      removeFromWatchlist(heroItem.id);
-    } else {
-      addToWatchlist(heroItem);
-    }
   };
 
   const renderMediaRow = (title: string, data: MediaItem[]) => {
@@ -176,69 +164,93 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Main Hero Banner Component */}
-        <View style={styles.heroContainer}>
-          <Image 
-            source={{ uri: heroItem.backdrop_path }} 
-            style={styles.heroImage}
-            contentFit="cover"
-          />
-          <View style={styles.heroOverlay} />
-          
-          <View style={styles.heroInfoWrapper}>
-            <Text style={styles.heroTitle} numberOfLines={2}>
-              {heroItem.title}
-            </Text>
-            
-            <View style={styles.heroMeta}>
-              <Text style={styles.heroMetaMatch}>98% Match</Text>
-              <Text style={styles.heroMetaText}>{heroItem.release_date.slice(0, 4)}</Text>
-              <Text style={styles.heroMetaText}>
-                {heroItem.type === 'tv' ? 'TV-MA' : 'PG-13'}
-              </Text>
-            </View>
+        {/* Main Hero Swipeable Carousel */}
+        <View style={styles.heroWrapper}>
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ width: width * heroItems.length }}
+          >
+            {heroItems.map((item) => {
+              const isItemBookmarked = isInWatchlist(item.id);
+              const handleToggleItemWatchlist = () => {
+                if (isItemBookmarked) {
+                  removeFromWatchlist(item.id);
+                } else {
+                  addToWatchlist(item);
+                }
+              };
 
-            {/* Play / List trigger actions */}
-            <View style={styles.heroActionsRow}>
-              <TouchableOpacity 
-                activeOpacity={0.8}
-                onPress={handleToggleHeroWatchlist}
-                style={styles.heroActionBtn}
-              >
-                {isHeroBookmarked ? (
-                  <Check color="#e50914" size={20} strokeWidth={3} />
-                ) : (
-                  <Plus color="#fff" size={20} />
-                )}
-                <Text style={[styles.heroActionText, isHeroBookmarked && { color: '#e50914' }]}>
-                  My List
-                </Text>
-              </TouchableOpacity>
+              return (
+                <View key={item.id} style={[styles.heroContainer, { width }]}>
+                  <Image 
+                    source={{ uri: item.backdrop_path }} 
+                    style={styles.heroImage}
+                    contentFit="cover"
+                  />
+                  <View style={styles.heroOverlay} />
+                  
+                  <View style={styles.heroInfoWrapper}>
+                    <Text style={styles.heroTitle} numberOfLines={2}>
+                      {item.title}
+                    </Text>
+                    
+                    <View style={styles.heroMeta}>
+                      <Text style={styles.heroMetaMatch}>98% Match</Text>
+                      <Text style={styles.heroMetaText}>
+                        {item.release_date ? item.release_date.slice(0, 4) : '2024'}
+                      </Text>
+                      <Text style={styles.heroMetaText}>
+                        {item.type === 'tv' ? 'TV-MA' : 'PG-13'}
+                      </Text>
+                    </View>
 
-              <TouchableOpacity 
-                activeOpacity={0.9}
-                onPress={() => {
-                  const playUrl = heroItem.type === 'tv'
-                    ? { pathname: '/watch/[type]/[id]', params: { type: heroItem.type, id: heroItem.id.toString(), season: '1', episode: '1' } }
-                    : { pathname: '/watch/[type]/[id]', params: { type: heroItem.type, id: heroItem.id.toString() } };
-                  router.push(playUrl as any);
-                }}
-                style={styles.heroPlayBtn}
-              >
-                <Play color="#000" size={20} fill="#000" />
-                <Text style={styles.heroPlayBtnText}>Play</Text>
-              </TouchableOpacity>
+                    {/* Play / List trigger actions */}
+                    <View style={styles.heroActionsRow}>
+                      <TouchableOpacity 
+                        activeOpacity={0.8}
+                        onPress={handleToggleItemWatchlist}
+                        style={styles.heroActionBtn}
+                      >
+                        {isItemBookmarked ? (
+                          <Check color="#e50914" size={20} strokeWidth={3} />
+                        ) : (
+                          <Plus color="#fff" size={20} />
+                        )}
+                        <Text style={[styles.heroActionText, isItemBookmarked && { color: '#e50914' }]}>
+                          My List
+                        </Text>
+                      </TouchableOpacity>
 
-              <TouchableOpacity 
-                activeOpacity={0.8}
-                onPress={() => handleMediaPress(heroItem)}
-                style={styles.heroActionBtn}
-              >
-                <Info color="#fff" size={20} />
-                <Text style={styles.heroActionText}>Info</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+                      <TouchableOpacity 
+                        activeOpacity={0.9}
+                        onPress={() => {
+                          const playUrl = item.type === 'tv'
+                            ? { pathname: '/watch/[type]/[id]', params: { type: item.type, id: item.id.toString(), season: '1', episode: '1' } }
+                            : { pathname: '/watch/[type]/[id]', params: { type: item.type, id: item.id.toString() } };
+                          router.push(playUrl as any);
+                        }}
+                        style={styles.heroPlayBtn}
+                      >
+                        <Play color="#000" size={20} fill="#000" />
+                        <Text style={styles.heroPlayBtnText}>Play</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity 
+                        activeOpacity={0.8}
+                        onPress={() => handleMediaPress(item)}
+                        style={styles.heroActionBtn}
+                      >
+                        <Info color="#fff" size={20} />
+                        <Text style={styles.heroActionText}>Info</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+          </ScrollView>
         </View>
 
         {/* Carousel Rows */}
@@ -435,5 +447,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 6,
     fontWeight: 'bold',
+  },
+  heroWrapper: {
+    width: '100%',
+    height: width * 1.1,
   },
 });

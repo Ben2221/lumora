@@ -7,7 +7,7 @@ import { ArrowLeft, Play } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { API_BASE_URL } from '@/constants/api';
+import { getMediaDetails } from '@/services/tmdb';
 import { useContinueWatching } from '@/hooks/useContinueWatching';
 import { MediaItem } from '@/constants/mockData';
 
@@ -66,9 +66,7 @@ export default function WatchScreen() {
     let active = true;
     const fetchDetails = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/media/${type}/${id}`);
-        if (!res.ok) throw new Error('Failed to fetch details');
-        const json = await res.json();
+        const json = await getMediaDetails(id, type);
         if (active && json) {
           setMedia(json);
           saveToContinueWatching(json);

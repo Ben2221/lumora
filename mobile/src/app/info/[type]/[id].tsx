@@ -25,7 +25,7 @@ import {
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { API_BASE_URL } from '@/constants/api';
+import { getMediaDetails, getSeasonEpisodes } from '@/services/tmdb';
 
 const { width } = Dimensions.get('window');
 
@@ -42,16 +42,14 @@ export default function InfoScreen() {
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [episodesLoading, setEpisodesLoading] = useState(false);
 
-  // Fetch real media details from Next.js backend
+  // Fetch real media details
   useEffect(() => {
     if (!id || !type) return;
     
     let active = true;
     const fetchDetails = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/media/${type}/${id}`);
-        if (!res.ok) throw new Error('Details fetch failed');
-        const json = await res.json();
+        const json = await getMediaDetails(id, type);
         if (active && json) {
           setMedia(json);
         }
@@ -101,9 +99,7 @@ export default function InfoScreen() {
     const fetchEpisodes = async () => {
       setEpisodesLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/tv/${id}/season/${selectedSeason}`);
-        if (!res.ok) throw new Error('Failed to fetch episodes');
-        const json = await res.json();
+        const json = await getSeasonEpisodes(id, selectedSeason);
         if (active) {
           setEpisodes(json);
         }
@@ -346,6 +342,38 @@ export default function InfoScreen() {
                   ))
                 )}
               </View>
+            </View>
+          )}
+
+          {/* More Like This (Similar Titles) */}
+          {media && media.similar && media.similar.length > 0 && (
+            <View style={styles.similarContainer}>
+              <Text style={styles.sectionTitle}>More Like This</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.similarScroll}
+              >
+                {media.similar.map((similarItem) => (
+                  <TouchableOpacity
+                    key={similarItem.id}
+                    activeOpacity={0.8}
+                    style={styles.similarCard}
+                    onPress={() => {
+                      router.push({
+                        pathname: '/info/[type]/[id]',
+                        params: { type: similarItem.type || type, id: similarItem.id.toString() }
+                      } as any);
+                    }}
+                  >
+                    <Image
+                      source={{ uri: similarItem.poster_path }}
+                      style={styles.similarPoster}
+                      contentFit="cover"
+                    />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
             </View>
           )}
         </View>
@@ -709,5 +737,23 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
     maxWidth: width - 180,
+  },
+  similarContainer: {
+    marginTop: Spacing.four,
+    marginBottom: Spacing.four,
+  },
+  similarScroll: {
+    gap: Spacing.two,
+  },
+  similarCard: {
+    width: 100,
+    height: 150,
+    borderRadius: 4,
+    overflow: 'hidden',
+    backgroundColor: '#1a1a1a',
+  },
+  similarPoster: {
+    width: '100%',
+    height: '100%',
   },
 });
