@@ -241,6 +241,8 @@ export default function WatchScreen() {
         allowsFullscreenVideo={true}
         allowsInlineMediaPlayback={true}
         mediaPlaybackRequiresUserAction={false}
+        allowsAirPlayForMediaPlayback={true}
+        allowsPictureInPictureMediaPlayback={true}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
@@ -253,7 +255,10 @@ export default function WatchScreen() {
         overScrollMode="never"
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
-        userAgent="Mozilla/5.0 (Linux; Android 10; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Mobile Safari/537.36"
+        userAgent={Platform.select({
+          ios: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
+          android: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        })}
       />
 
       {/* Premium Dark Glassmorphic Pause Overlay with Promo Image */}
