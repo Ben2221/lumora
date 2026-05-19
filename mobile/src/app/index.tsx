@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
     paddingHorizontal: Spacing.four,
-    paddingBottom: Spacing.five,
+    paddingBottom: 22,
     backgroundColor: 'rgba(0,0,0,0.65)',
   },
   heroTitle: {
