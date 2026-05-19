@@ -280,7 +280,9 @@ export default function HomeScreen() {
                     </Text>
 
                     <View style={styles.heroMeta}>
-                      <Text style={styles.heroMetaMatch}>98% Match</Text>
+                      <Text style={styles.heroMetaMatch}>
+                        {item.vote_average ? `${(item.vote_average * 10).toFixed(0)}% Match` : '98% Match'}
+                      </Text>
                       <Text style={styles.heroMetaText}>
                         {item.release_date ? item.release_date.slice(0, 4) : '2024'}
                       </Text>

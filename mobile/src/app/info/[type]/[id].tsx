@@ -187,7 +187,9 @@ export default function InfoScreen() {
           <Text style={styles.title}>{media.title}</Text>
           
           <View style={styles.metadataRow}>
-            <Text style={styles.matchText}>95% Match</Text>
+            <Text style={styles.matchText}>
+              {media.vote_average ? `${(media.vote_average * 10).toFixed(0)}% Match` : '95% Match'}
+            </Text>
             <View style={styles.metaBadge}>
               <Calendar color="#B0B4BA" size={12} />
               <Text style={styles.metaBadgeText}>{media.release_date.slice(0, 4)}</Text>
