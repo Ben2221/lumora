@@ -464,11 +464,10 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   loadingBrandText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: '900',
     color: '#e50914',
-    letterSpacing: 3,
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    letterSpacing: -1.5,
   },
   loadingText: {
     color: '#B0B4BA',

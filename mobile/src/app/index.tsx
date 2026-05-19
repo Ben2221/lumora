@@ -314,11 +314,10 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   logoText: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '900',
     color: '#e50914',
-    letterSpacing: 1.5,
-    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    letterSpacing: -1.2,
   },
   filterRow: {
     flexDirection: 'row',
