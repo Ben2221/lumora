@@ -352,4 +352,20 @@ export async function getOscarNominees(): Promise<MediaItem[]> {
   return mapTMDBResults(data.results, 'movie');
 }
 
+export async function getRecommendations(id: string, type: 'movie' | 'tv'): Promise<MediaItem[]> {
+  const data = await fetchFromTMDB(`/${type}/${id}/recommendations`);
+  if (!data || !data.results || data.results.length === 0) {
+    const similarData = await fetchFromTMDB(`/${type}/${id}/similar`);
+    if (!similarData || !similarData.results) return [];
+    return mapTMDBResults(similarData.results, type);
+  }
+  return mapTMDBResults(data.results, type);
+}
+
+export async function getPopularRecommendations(): Promise<MediaItem[]> {
+  const data = await fetchFromTMDB('/movie/popular');
+  if (!data) return topRatedMovies; // Fallback
+  return mapTMDBResults(data.results, 'movie');
+}
+
 
