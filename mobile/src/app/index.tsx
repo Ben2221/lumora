@@ -324,7 +324,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    marginTop: Spacing.two,
+    marginTop: Spacing.three,
   },
   filterButton: {
     paddingVertical: 5,
