@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -166,7 +167,10 @@ export default function InfoScreen() {
             style={styles.backdropImage}
             contentFit="cover"
           />
-          <View style={styles.gradientOverlay} />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.95)']}
+            style={styles.gradientOverlay}
+          />
           
           {/* Floating Back Button */}
           <TouchableOpacity
@@ -480,9 +484,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: '60%',
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    // In React Native, standard gradients require packages, so overlay shadows do the trick
+    height: '100%',
   },
   backButton: {
     position: 'absolute',
