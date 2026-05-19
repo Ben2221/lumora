@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   },
   detailsWrapper: {
     paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.two,
+    paddingTop: Spacing.three,
   },
   title: {
     fontSize: 26,
