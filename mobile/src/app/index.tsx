@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -113,6 +113,31 @@ export default function HomeScreen() {
     return lists.trending.slice(0, 5);
   })();
 
+  const originalCount = heroItems.length;
+  const loopedHeroItems = originalCount > 0
+    ? [heroItems[originalCount - 1], ...heroItems, heroItems[0]]
+    : [];
+
+  const heroScrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (heroScrollRef.current && originalCount > 0) {
+      requestAnimationFrame(() => {
+        heroScrollRef.current?.scrollTo({ x: width, animated: false });
+      });
+    }
+  }, [heroItems]);
+
+  const handleHeroScrollEnd = (e: any) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const currentIndex = Math.round(offsetX / width);
+    if (currentIndex === 0) {
+      heroScrollRef.current?.scrollTo({ x: originalCount * width, animated: false });
+    } else if (currentIndex === originalCount + 1) {
+      heroScrollRef.current?.scrollTo({ x: width, animated: false });
+    }
+  };
+
   const handleMediaPress = (item: MediaItem) => {
     router.push({
       pathname: '/info/[type]/[id]',
@@ -200,12 +225,15 @@ export default function HomeScreen() {
         {/* Main Hero Swipeable Carousel */}
         <View style={styles.heroWrapper}>
           <ScrollView
+            ref={heroScrollRef}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ width: width * heroItems.length }}
+            contentContainerStyle={{ width: width * loopedHeroItems.length }}
+            contentOffset={{ x: width, y: 0 }}
+            onMomentumScrollEnd={handleHeroScrollEnd}
           >
-            {heroItems.map((item) => {
+            {loopedHeroItems.map((item, idx) => {
               const isItemBookmarked = isInWatchlist(item.id);
               const handleToggleItemWatchlist = () => {
                 if (isItemBookmarked) {
@@ -216,7 +244,7 @@ export default function HomeScreen() {
               };
 
               return (
-                <View key={item.id} style={[styles.heroContainer, { width }]}>
+                <View key={`${item.id}-${idx}`} style={[styles.heroContainer, { width }]}>
                   <Image
                     source={{ uri: item.backdrop_path }}
                     style={styles.heroImage}
