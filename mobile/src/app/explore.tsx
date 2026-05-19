@@ -22,7 +22,7 @@ import {
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { TabBar } from '@/components/TabBar';
-import { searchMedia } from '@/services/tmdb';
+import { searchMedia, getHomeLists } from '@/services/tmdb';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - Spacing.four * 2 - Spacing.two * 2) / 3;
@@ -34,16 +34,36 @@ export default function ExploreScreen() {
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MediaItem[]>([]);
+  const [popularMedia, setPopularMedia] = useState<MediaItem[]>([]);
   const [isFocused, setIsFocused] = useState(false);
 
   // Combine database lists to search
   const allMedia = [...trendingMovies, ...newReleases, ...mockTVShows];
 
+  // Fetch real trending/popular items for Popular Searches
+  useEffect(() => {
+    let active = true;
+    const loadPopular = async () => {
+      try {
+        const data = await getHomeLists();
+        if (active && data && data.trending.length > 0) {
+          setPopularMedia(data.trending.slice(0, 18));
+        }
+      } catch (err) {
+        console.warn('[Explore] Failed to fetch popular searches:', err);
+      }
+    };
+    loadPopular();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   useEffect(() => {
     const trimmed = query.trim();
     if (trimmed.length < 2) {
       // Show default recommendations when search is empty
-      setResults(allMedia.slice(0, 9));
+      setResults(popularMedia.length > 0 ? popularMedia : allMedia.slice(0, 9));
       return;
     }
 
@@ -69,7 +89,7 @@ export default function ExploreScreen() {
       active = false;
       clearTimeout(delayDebounce);
     };
-  }, [query]);
+  }, [query, popularMedia]);
 
   const renderItem = ({ item }: { item: MediaItem }) => (
     <TouchableOpacity
