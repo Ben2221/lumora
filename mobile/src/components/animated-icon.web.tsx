@@ -1,109 +1,168 @@
 import { Image } from 'expo-image';
-import { StyleSheet, View } from 'react-native';
-import Animated, { Keyframe, Easing } from 'react-native-reanimated';
+import { useState, useEffect } from 'react';
+import { Dimensions, StyleSheet, View, Text, ActivityIndicator } from 'react-native';
+import Animated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  Easing,
+  runOnJS
+} from 'react-native-reanimated';
 
-// @ts-ignore
-import classes from './animated-icon.module.css';
-const DURATION = 300;
+const { width } = Dimensions.get('window');
 
 export function AnimatedSplashOverlay() {
-  return null;
-}
+  const [visible, setVisible] = useState(true);
+  
+  // Animation shared values
+  const scale = useSharedValue(0.5);
+  const opacity = useSharedValue(0);
+  const textOpacity = useSharedValue(0);
+  const textTranslateY = useSharedValue(20);
+  const containerOpacity = useSharedValue(1);
 
-const keyframe = new Keyframe({
-  0: {
-    transform: [{ scale: 0 }],
-  },
-  60: {
-    transform: [{ scale: 1.2 }],
-    easing: Easing.elastic(1.2),
-  },
-  100: {
-    transform: [{ scale: 1 }],
-    easing: Easing.elastic(1.2),
-  },
-});
+  useEffect(() => {
+    // Start sequence of entrance animations
+    scale.value = withTiming(1, {
+      duration: 850,
+      easing: Easing.bezier(0.16, 1, 0.3, 1),
+    });
+    opacity.value = withTiming(1, {
+      duration: 850,
+    });
 
-const logoKeyframe = new Keyframe({
-  0: {
-    opacity: 0,
-  },
-  60: {
-    transform: [{ scale: 1.2 }],
-    opacity: 0,
-    easing: Easing.elastic(1.2),
-  },
-  100: {
-    transform: [{ scale: 1 }],
-    opacity: 1,
-    easing: Easing.elastic(1.2),
-  },
-});
+    // Animate text shortly after
+    const textTimer = setTimeout(() => {
+      textOpacity.value = withTiming(1, { duration: 600 });
+      textTranslateY.value = withTiming(0, {
+        duration: 600,
+        easing: Easing.bezier(0.16, 1, 0.3, 1),
+      });
+    }, 450);
 
-const glowKeyframe = new Keyframe({
-  0: {
-    transform: [{ rotateZ: '-180deg' }, { scale: 0.8 }],
-    opacity: 0,
-  },
-  [DURATION / 1000]: {
-    transform: [{ rotateZ: '0deg' }, { scale: 1 }],
-    opacity: 1,
-    easing: Easing.elastic(0.7),
-  },
-  100: {
-    transform: [{ rotateZ: '7200deg' }],
-  },
-});
+    // Fade out container after 2.3 seconds
+    const exitTimer = setTimeout(() => {
+      containerOpacity.value = withTiming(0, {
+        duration: 550,
+        easing: Easing.linear,
+      }, (finished) => {
+        if (finished) {
+          runOnJS(setVisible)(false);
+        }
+      });
+    }, 2300);
 
-export function AnimatedIcon() {
+    return () => {
+      clearTimeout(textTimer);
+      clearTimeout(exitTimer);
+    };
+  }, []);
+
+  const animatedLogoStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  const animatedTextStyle = useAnimatedStyle(() => ({
+    opacity: textOpacity.value,
+    transform: [{ translateY: textTranslateY.value }],
+  }));
+
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    opacity: containerOpacity.value,
+  }));
+
+  if (!visible) return null;
+
   return (
-    <View style={styles.iconContainer}>
-      <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
-        <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
-      </Animated.View>
-
-      <Animated.View style={styles.background} entering={keyframe.duration(DURATION)}>
-        <div className={classes.expoLogoBackground} />
-      </Animated.View>
-
-      <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
-        <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
-      </Animated.View>
-    </View>
+    <Animated.View style={[styles.container, animatedContainerStyle]}>
+      {/* Cinematic Red Ambient Glow */}
+      <View style={styles.glowCircle} />
+      
+      <View style={styles.content}>
+        <Animated.View style={[styles.logoWrapper, animatedLogoStyle]}>
+          <Image 
+            source={require('@/assets/images/icon.png')} 
+            style={styles.logoImage} 
+            contentFit="contain"
+          />
+        </Animated.View>
+        
+        <Animated.View style={[styles.textWrapper, animatedTextStyle]}>
+          <Text style={styles.appName}>LUMORA</Text>
+          <Text style={styles.tagline}>Stream the Extraordinary</Text>
+        </Animated.View>
+        
+        <ActivityIndicator size="small" color="#e50914" style={styles.spinner} />
+      </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000000',
+    zIndex: 9999,
     alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glowCircle: {
+    position: 'absolute',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: '#e50914',
+    opacity: 0.12,
+    shadowColor: '#e50914',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 110,
+    elevation: 35,
+  },
+  content: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+  },
+  logoWrapper: {
+    width: 110,
+    height: 110,
+    borderRadius: 24,
+    overflow: 'hidden',
+    shadowColor: '#e50914',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 12,
+    backgroundColor: '#111',
+  },
+  logoImage: {
     width: '100%',
-    zIndex: 1000,
-    position: 'absolute',
-    top: 128 / 2 + 138,
+    height: '100%',
   },
-  imageContainer: {
-    justifyContent: 'center',
+  textWrapper: {
     alignItems: 'center',
+    gap: 6,
   },
-  glow: {
-    width: 201,
-    height: 201,
-    position: 'absolute',
+  appName: {
+    color: '#ffffff',
+    fontSize: 34,
+    fontWeight: '900',
+    letterSpacing: 9,
+    textAlign: 'center',
+    textShadowColor: 'rgba(229,9,20,0.45)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
-  iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 128,
-    height: 128,
+  tagline: {
+    color: '#777777',
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
   },
-  image: {
-    position: 'absolute',
-    width: 76,
-    height: 71,
-  },
-  background: {
-    width: 128,
-    height: 128,
-    position: 'absolute',
+  spinner: {
+    marginTop: 20,
   },
 });
