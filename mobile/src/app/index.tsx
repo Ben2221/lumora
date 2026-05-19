@@ -103,9 +103,15 @@ export default function HomeScreen() {
   }, []);
 
   // Get top 5 featured items for the Hero carousel
-  const heroItems = activeFilter === 'tv'
-    ? lists.originals.slice(0, 5)
-    : lists.trending.slice(0, 5);
+  const heroItems = (() => {
+    if (activeFilter === 'movies') {
+      return lists.trending.filter(item => item.type === 'movie').slice(0, 5);
+    }
+    if (activeFilter === 'tv') {
+      return lists.originals.filter(item => item.type === 'tv').slice(0, 5);
+    }
+    return lists.trending.slice(0, 5);
+  })();
 
   const handleMediaPress = (item: MediaItem) => {
     router.push({
