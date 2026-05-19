@@ -379,7 +379,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.five,
     backgroundColor: 'rgba(0,0,0,0.65)',
-    padding: 5
   },
   heroTitle: {
     fontSize: 28,
@@ -391,6 +390,7 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
     fontFamily: 'Outfit-Black',
+    width: '100%',
   },
   heroMeta: {
     flexDirection: 'row',
