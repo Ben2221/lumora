@@ -10,6 +10,7 @@ import { MediaItem } from '@/lib/mockData';
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [suggestions, setSuggestions] = useState<MediaItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -57,6 +58,7 @@ export default function Navbar() {
       if (e.key === 'Escape') {
         setShowDropdown(false);
         setIsSearchOpen(false);
+        setIsSearchFocused(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -194,10 +196,14 @@ export default function Navbar() {
                 {isSearchOpen && (
                   <motion.form
                     initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 240, opacity: 1 }}
+                    animate={{ width: 320, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     onSubmit={handleSearchSubmit}
-                    className="absolute right-0 flex items-center bg-black/60 backdrop-blur-md border border-white/20 rounded-full py-1.5 px-3 overflow-hidden shadow-inner"
+                    className={`absolute right-0 flex items-center bg-black/80 backdrop-blur-xl border rounded-full py-2 px-4 transition-all duration-300 shadow-2xl ${
+                      isSearchFocused 
+                        ? 'border-[#e50914] ring-2 ring-[#e50914]/20 shadow-[0_0_15px_rgba(229,9,20,0.4)]' 
+                        : 'border-white/10 hover:border-white/25'
+                    }`}
                   >
                     <input
                       ref={searchInputRef}
@@ -205,14 +211,19 @@ export default function Navbar() {
                       placeholder="Titles, people, genres..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => setIsSearchFocused(true)}
+                      onBlur={() => setIsSearchFocused(false)}
                       className="bg-transparent border-none outline-none text-white text-xs w-full mr-2 placeholder-gray-400 font-medium"
                     />
-                    <button type="submit" className="text-white hover:text-gray-300 transition-colors">
+                    <button type="submit" className="text-white hover:text-[#e50914] transition-colors">
                       <Search className="w-4 h-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setIsSearchOpen(false)}
+                      onClick={() => {
+                        setIsSearchOpen(false);
+                        setIsSearchFocused(false);
+                      }}
                       className="text-gray-400 hover:text-white ml-1.5 transition-colors"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -228,7 +239,7 @@ export default function Navbar() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
-                    className="absolute right-0 top-full mt-3 w-80 bg-black/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-2xl overflow-hidden z-[110]"
+                    className="absolute right-0 top-full mt-3 w-[320px] bg-black/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-2xl overflow-hidden z-[110]"
                   >
                     {isSearching ? (
                       <div className="flex items-center justify-center p-6 gap-2">

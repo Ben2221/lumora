@@ -187,7 +187,7 @@ export default async function InfoPage({ params }: InfoPageProps) {
               </h2>
               {media.director && (
                 <div className="mt-2 sm:mt-0 text-sm sm:text-base font-semibold text-gray-400">
-                  Director / Creator: <span className="text-white">{media.director}</span>
+                  Director / Creator: <a href={`https://www.imdb.com/find/?q=${encodeURIComponent(media.director)}`} target="_blank" rel="noopener noreferrer" className="text-white hover:text-[#e50914] hover:underline cursor-pointer transition-colors font-semibold">{media.director}</a>
                 </div>
               )}
             </div>
@@ -195,9 +195,12 @@ export default async function InfoPage({ params }: InfoPageProps) {
             {media.cast && media.cast.length > 0 && (
               <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x">
                 {media.cast.map((actor) => (
-                  <div 
+                  <a 
                     key={actor.id} 
-                    className="flex flex-col items-center text-center shrink-0 w-28 sm:w-32 snap-start group"
+                    href={`https://www.imdb.com/find/?q=${encodeURIComponent(actor.name)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center text-center shrink-0 w-28 sm:w-32 snap-start group cursor-pointer"
                   >
                     <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 border-2 border-white/5 group-hover:border-[#e50914] transition-colors duration-300">
                       {actor.profile_path ? (
@@ -220,7 +223,7 @@ export default async function InfoPage({ params }: InfoPageProps) {
                     <div className="text-xs font-semibold text-gray-400 line-clamp-1 mt-0.5">
                       {actor.character}
                     </div>
-                  </div>
+                  </a>
                 ))}
               </div>
             )}

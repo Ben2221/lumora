@@ -20,18 +20,18 @@ interface EpisodeSelectorProps {
 }
 
 export default function EpisodeSelector({ tvId, seasons }: EpisodeSelectorProps) {
-  // Filter seasons to only include actual seasons (season_number > 0 generally, ignore specials if wanted)
+  // Filter seasons to only include actual seasons
   const validSeasons = seasons.filter(s => s.season_number > 0);
   
   const [activeSeason, setActiveSeason] = useState<number>(
     validSeasons.length > 0 ? validSeasons[0].season_number : 1
   );
   const [episodes, setEpisodes] = useState<Episode[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-    setIsLoading(true);
     
     fetch(`/api/tv/${tvId}/season/${activeSeason}`)
       .then(res => res.json())
@@ -55,30 +55,65 @@ export default function EpisodeSelector({ tvId, seasons }: EpisodeSelectorProps)
 
   if (validSeasons.length === 0) return null;
 
+  const currentSeason = validSeasons.find(s => s.season_number === activeSeason) || validSeasons[0];
+
   return (
     <div className="w-full mt-12 border-t border-white/10 pt-10">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative">
         <h3 className="text-xl sm:text-2xl font-bold text-white tracking-wide flex items-center gap-2">
           <Disc className="w-6 h-6 text-[#e50914]" /> Episodes
         </h3>
         
-        {/* Season Selector Dropdown */}
-        <div className="relative inline-block text-left">
-          <select
-            value={activeSeason}
-            onChange={(e) => setActiveSeason(parseInt(e.target.value))}
-            className="block w-full sm:w-48 bg-white/5 border border-white/10 rounded-md text-white text-sm font-semibold py-2.5 px-4 focus:outline-none focus:border-[#e50914] backdrop-blur-md transition-colors cursor-pointer"
+        {/* Custom Season Selector Dropdown */}
+        <div className="relative inline-block text-left z-40">
+          <button
+            type="button"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center justify-between gap-3 w-full sm:w-56 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-md text-white text-sm font-bold py-2.5 px-4 focus:outline-none focus:border-[#e50914] backdrop-blur-md transition-all duration-200 cursor-pointer shadow-lg active:scale-[0.98]"
           >
-            {validSeasons.map((season) => (
-              <option key={season.id} value={season.season_number} className="bg-black text-white">
-                {season.name || `Season ${season.season_number}`} ({season.episode_count} Episodes)
-              </option>
-            ))}
-          </select>
+            <span>{currentSeason.name || `Season ${currentSeason.season_number}`}</span>
+            <span className="text-[10px] text-gray-400">({currentSeason.episode_count} Episodes)</span>
+            <span className={`text-[10px] text-gray-400 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}>▼</span>
+          </button>
+          
+          {isDropdownOpen && (
+            <>
+              {/* Click outside target */}
+              <div 
+                className="fixed inset-0 z-40 cursor-default" 
+                onClick={() => setIsDropdownOpen(false)} 
+              />
+              <div className="absolute right-0 mt-2 w-56 rounded-lg bg-black/95 border border-white/10 shadow-2xl z-50 backdrop-blur-xl overflow-hidden max-h-60 overflow-y-auto">
+                <div className="py-1">
+                  {validSeasons.map((season) => (
+                    <button
+                      key={season.id}
+                      type="button"
+                      onClick={() => {
+                        setIsLoading(true); // Safe state update before season triggers fetch
+                        setActiveSeason(season.season_number);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`flex w-full items-center justify-between px-4 py-3 text-sm text-left transition-colors ${
+                        activeSeason === season.season_number
+                          ? 'bg-[#e50914] text-white font-bold'
+                          : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      <span className="truncate">{season.name || `Season ${season.season_number}`}</span>
+                      <span className={`text-[10px] ${activeSeason === season.season_number ? 'text-white' : 'text-gray-500'}`}>
+                        {season.episode_count} Ep
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Episodes List */}
+      {/* Episodes Grid */}
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-10 h-10 text-[#e50914] animate-spin" />

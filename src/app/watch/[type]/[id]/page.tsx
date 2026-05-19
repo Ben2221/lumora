@@ -5,12 +5,31 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import VidKingPlayer from '@/components/player/VidKingPlayer';
 
-function PlayerWithParams({ id, type }: { id: string; type: 'movie' | 'tv' }) {
+function PlayerWithParams({ 
+  id, 
+  type, 
+  backdrop, 
+  overview 
+}: { 
+  id: string; 
+  type: 'movie' | 'tv'; 
+  backdrop: string | null; 
+  overview: string; 
+}) {
   const searchParams = useSearchParams();
   const season = searchParams.get('season') || undefined;
   const episode = searchParams.get('episode') || undefined;
 
-  return <VidKingPlayer id={id} type={type} season={season} episode={episode} />;
+  return (
+    <VidKingPlayer 
+      id={id} 
+      type={type} 
+      season={season} 
+      episode={episode} 
+      backdrop={backdrop} 
+      overview={overview} 
+    />
+  );
 }
 
 export default function WatchPage() {
@@ -21,6 +40,8 @@ export default function WatchPage() {
   const type = params.type as 'movie' | 'tv';
 
   const [title, setTitle] = useState<string>('Loading...');
+  const [backdrop, setBackdrop] = useState<string | null>(null);
+  const [overview, setOverview] = useState<string>('');
   const [showControls, setShowControls] = useState(true);
 
   useEffect(() => {
@@ -30,6 +51,8 @@ export default function WatchPage() {
       .then((data) => {
         if (data && data.title) {
           setTitle(data.title);
+          setBackdrop(data.backdrop_path || null);
+          setOverview(data.overview || '');
           
           // Save to LocalStorage for Continue Watching feature
           try {
@@ -105,7 +128,7 @@ export default function WatchPage() {
             <p className="text-gray-400 font-medium">Initializing Player...</p>
           </div>
         }>
-          <PlayerWithParams id={id} type={type} />
+          <PlayerWithParams id={id} type={type} backdrop={backdrop} overview={overview} />
         </Suspense>
       </div>
     </div>
