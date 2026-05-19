@@ -128,7 +128,11 @@ export default function InfoScreen() {
   if (!media) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
-        <Text style={styles.loadingText}>Loading details...</Text>
+        <View style={styles.loadingBrandContainer}>
+          <Text style={styles.loadingBrandText}>LUMORA</Text>
+          <ActivityIndicator size="large" color="#e50914" style={{ marginTop: Spacing.two }} />
+          <Text style={styles.loadingText}>Loading Details...</Text>
+        </View>
       </View>
     );
   }
@@ -439,9 +443,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  loadingBrandContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.two,
+  },
+  loadingBrandText: {
+    fontSize: 28,
+    fontWeight: '900',
+    color: '#e50914',
+    letterSpacing: 3,
+    fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+  },
   loadingText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#B0B4BA',
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: Spacing.two,
+    letterSpacing: 0.5,
   },
   scrollContainer: {
     paddingBottom: 40,
