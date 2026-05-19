@@ -119,8 +119,22 @@ export default function HomeScreen() {
     : [];
 
   const heroScrollRef = useRef<ScrollView>(null);
+  const heroIndexRef = useRef(1);
+
+  // Auto-scroll effect (fires every 5 seconds)
+  useEffect(() => {
+    if (originalCount <= 1) return;
+
+    const interval = setInterval(() => {
+      const nextIndex = heroIndexRef.current + 1;
+      heroScrollRef.current?.scrollTo({ x: nextIndex * width, animated: true });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [heroItems]);
 
   useEffect(() => {
+    heroIndexRef.current = 1;
     if (heroScrollRef.current && originalCount > 0) {
       requestAnimationFrame(() => {
         heroScrollRef.current?.scrollTo({ x: width, animated: false });
@@ -128,14 +142,21 @@ export default function HomeScreen() {
     }
   }, [heroItems]);
 
-  const handleHeroScrollEnd = (e: any) => {
-    const offsetX = e.nativeEvent.contentOffset.x;
+  const handleScrollLogic = (offsetX: number) => {
     const currentIndex = Math.round(offsetX / width);
+    heroIndexRef.current = currentIndex;
+
     if (currentIndex === 0) {
+      heroIndexRef.current = originalCount;
       heroScrollRef.current?.scrollTo({ x: originalCount * width, animated: false });
     } else if (currentIndex === originalCount + 1) {
+      heroIndexRef.current = 1;
       heroScrollRef.current?.scrollTo({ x: width, animated: false });
     }
+  };
+
+  const handleHeroScrollEnd = (e: any) => {
+    handleScrollLogic(e.nativeEvent.contentOffset.x);
   };
 
   const handleMediaPress = (item: MediaItem) => {
@@ -232,6 +253,7 @@ export default function HomeScreen() {
             contentContainerStyle={{ width: width * loopedHeroItems.length }}
             contentOffset={{ x: width, y: 0 }}
             onMomentumScrollEnd={handleHeroScrollEnd}
+            onScrollAnimationEnd={() => handleScrollLogic(heroIndexRef.current * width)}
           >
             {loopedHeroItems.map((item, idx) => {
               const isItemBookmarked = isInWatchlist(item.id);
