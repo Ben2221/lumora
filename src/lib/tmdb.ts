@@ -15,26 +15,51 @@ async function fetchFromTMDB(endpoint: string) {
   
   // Return cached result if still valid to avoid saturating TMDB or slowing down on slow networks
   const cached = memoryCache[endpoint];
-  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+  const now = Date.now();
+  if (cached && (now - cached.timestamp < CACHE_TTL)) {
     return cached.data;
   }
   
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, 4000);
+
   try {
     const res = await fetch(`${BASE_URL}${endpoint}${endpoint.includes('?') ? '&' : '?'}api_key=${TMDB_API_KEY}`, {
       next: { revalidate: 3600 }, // Cache for 1 hour in production
+      signal: controller.signal,
     });
-    if (!res.ok) return null;
+    
+    clearTimeout(timeoutId);
+    
+    if (!res.ok) {
+      if (cached) {
+        console.warn(`TMDB HTTP Error ${res.status} at ${endpoint}. Returning stale cache.`);
+        return cached.data;
+      }
+      return null;
+    }
+    
     const json = await res.json();
     
     // Save to high-speed memory cache
     memoryCache[endpoint] = {
       data: json,
-      timestamp: Date.now()
+      timestamp: now
     };
     
     return json;
-  } catch (error) {
-    console.error(`TMDB Fetch Error at ${endpoint}:`, error);
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    console.error(`TMDB Fetch Error at ${endpoint}:`, error.message || error);
+    
+    // Fallback to expired cache on network failure or timeout/abort
+    if (cached) {
+      console.warn(`TMDB Request failed at ${endpoint}. Returning stale cache.`);
+      return cached.data;
+    }
+    
     return null;
   }
 }
@@ -57,6 +82,12 @@ export async function getTrending(): Promise<MediaItem[]> {
   const data = await fetchFromTMDB('/trending/all/week');
   if (!data) return trendingMovies; // Fallback
   return mapTMDBResults(data.results);
+}
+
+export async function getTrendingMovies(): Promise<MediaItem[]> {
+  const data = await fetchFromTMDB('/trending/movie/week');
+  if (!data) return trendingMovies; // Fallback
+  return mapTMDBResults(data.results, 'movie');
 }
 
 export async function getTop10(): Promise<MediaItem[]> {
@@ -146,7 +177,7 @@ export async function getTVSeasonEpisodes(tvId: string, seasonNumber: number): P
 }
 
 export async function getMediaDetails(id: string, type: 'movie' | 'tv'): Promise<MediaItem | null> {
-  const data = await fetchFromTMDB(`/${type}/${id}?append_to_response=videos`);
+  const data = await fetchFromTMDB(`/${type}/${id}?append_to_response=videos,credits,similar,reviews`);
   if (!data) {
     // Attempt to search local mock data
     const mockMatch = [...trendingMovies, ...newReleases].find(m => m.id === parseInt(id));
@@ -161,7 +192,19 @@ export async function getMediaDetails(id: string, type: 'movie' | 'tv'): Promise
           { id: 1, name: 'Season 1', episode_count: 8, season_number: 1, poster_path: mockMatch.poster_path },
           { id: 2, name: 'Season 2', episode_count: 8, season_number: 2, poster_path: mockMatch.poster_path }
         ] : undefined,
-        trailer_key: 'zSWdZVtXT7E' // Premium Interstellar HD trailer fallback
+        trailer_key: 'zSWdZVtXT7E', // Premium Interstellar HD trailer fallback
+        cast: [
+          { id: 1, name: 'Matthew McConaughey', character: 'Cooper', profile_path: null },
+          { id: 2, name: 'Anne Hathaway', character: 'Brand', profile_path: null },
+          { id: 3, name: 'Jessica Chastain', character: 'Murph', profile_path: null },
+          { id: 4, name: 'Michael Caine', character: 'Professor Brand', profile_path: null }
+        ],
+        director: type === 'movie' ? 'Christopher Nolan' : 'Jonathan Nolan',
+        similar: [...trendingMovies, ...newReleases].filter(m => m.id !== parseInt(id)).slice(0, 12),
+        reviews: [
+          { author: 'CinemaCritic', content: 'An absolute masterpiece of modern sci-fi filmmaking. The visual effects and Hans Zimmer score are mind-blowing!', rating: 10, created_at: '2024-01-01' },
+          { author: 'SciFiFan99', content: 'Emotional, scientifically grounded, and visually stunning. One of my favorite films of all time.', rating: 9, created_at: '2024-01-02' }
+        ]
       };
     }
     return null;
@@ -172,6 +215,37 @@ export async function getMediaDetails(id: string, type: 'movie' | 'tv'): Promise
     (v: any) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser' || v.type === 'Clip')
   );
   const trailerKey = trailerVideo ? trailerVideo.key : null;
+
+  // Cast mapping (first 8 members)
+  const cast = data.credits?.cast?.slice(0, 8).map((c: any) => ({
+    id: c.id,
+    name: c.name,
+    character: c.character || '',
+    profile_path: c.profile_path ? `${IMAGE_BASE_URL}/w185${c.profile_path}` : null
+  })) || [];
+
+  // Director mapping
+  let director = undefined;
+  if (type === 'movie') {
+    const dirMember = data.credits?.crew?.find((c: any) => c.job === 'Director');
+    if (dirMember) director = dirMember.name;
+  } else if (type === 'tv') {
+    if (data.created_by && data.created_by.length > 0) {
+      director = data.created_by.map((c: any) => c.name).join(', ');
+    }
+  }
+
+  // Similar movies/shows (first 18 results)
+  const similarResults = data.similar?.results?.slice(0, 18) || [];
+  const similar = mapTMDBResults(similarResults, type);
+
+  // Reviews mapping (first 3 reviews)
+  const reviews = data.reviews?.results?.slice(0, 3).map((r: any) => ({
+    author: r.author || 'Anonymous',
+    content: r.content || '',
+    rating: r.author_details?.rating || undefined,
+    created_at: r.created_at || new Date().toISOString()
+  })) || [];
 
   return {
     id: data.id,
@@ -187,7 +261,11 @@ export async function getMediaDetails(id: string, type: 'movie' | 'tv'): Promise
     number_of_seasons: data.number_of_seasons,
     number_of_episodes: data.number_of_episodes,
     seasons: data.seasons || [],
-    trailer_key: trailerKey
+    trailer_key: trailerKey,
+    cast,
+    director,
+    similar,
+    reviews
   };
 }
 

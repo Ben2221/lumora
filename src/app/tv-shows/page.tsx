@@ -27,7 +27,7 @@ export default async function TVShowsPage() {
       {featuredShow && <Hero movie={featuredShow} />}
       
       <div className="relative z-30 -mt-24 sm:-mt-32 space-y-10">
-        <ContentCarousel title="Only on Lumora" items={originals} />
+        <ContentCarousel title="Featured on Lumora" items={originals} />
         <ContentCarousel title="Trending TV Shows" items={trending} />
         <ContentCarousel title="Popular Shows" items={popular} />
         <ContentCarousel title="Comedy Series" items={comedy} />

@@ -19,6 +19,20 @@ export interface MediaItem {
     poster_path: string | null;
   }[];
   trailer_key?: string | null;
+  cast?: {
+    id: number;
+    name: string;
+    character: string;
+    profile_path: string | null;
+  }[];
+  director?: string;
+  similar?: MediaItem[];
+  reviews?: {
+    author: string;
+    content: string;
+    rating?: number;
+    created_at: string;
+  }[];
 }
 
 export const trendingMovies: MediaItem[] = [

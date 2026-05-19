@@ -29,6 +29,11 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${outfit.variable} h-full antialiased`}
     >
+      <head>
+        <link rel="preconnect" href="https://www.vidking.net" />
+        <link rel="preconnect" href="https://api.themoviedb.org" />
+        <link rel="preconnect" href="https://image.tmdb.org" />
+      </head>
       <body className="min-h-full flex flex-col font-sans bg-[#070707] text-white">
         {children}
       </body>

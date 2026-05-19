@@ -1,17 +1,39 @@
+"use client";
+
+import { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
 import MediaCard from '@/components/cards/MediaCard';
-import { getNetflixOriginals } from '@/lib/tmdb';
-import { Plus, Flame } from 'lucide-react';
+import { Plus, Flame, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { MediaItem } from '@/lib/mockData';
 
-export const metadata = {
-  title: 'My List - Lumora',
-  description: 'Your personal library of movies and TV shows to watch later.',
-};
+export default function MyListPage() {
+  const [bookmarks, setBookmarks] = useState<MediaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default async function MyListPage() {
-  // Use a curated set of originals as the initial mocked bookmarked list items
-  const bookmarks = await getNetflixOriginals();
+  const loadList = () => {
+    try {
+      const list = JSON.parse(localStorage.getItem('lumora_mylist') || '[]');
+      if (Array.isArray(list)) {
+        setBookmarks(list);
+      }
+    } catch (e) {
+      console.error('Failed to parse My List from localStorage', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    document.title = 'My List - Lumora';
+    loadList();
+
+    // Listen for custom events to refresh list in real time
+    window.addEventListener('lumora_mylist_updated', loadList);
+    return () => {
+      window.removeEventListener('lumora_mylist_updated', loadList);
+    };
+  }, []);
 
   return (
     <main className="min-h-screen bg-[#070707] text-white pb-20">
@@ -30,7 +52,12 @@ export default async function MyListPage() {
         </div>
 
         {/* Content Section */}
-        {bookmarks.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <Loader2 className="w-10 h-10 text-[#e50914] animate-spin mb-4" />
+            <p className="text-gray-400 text-sm">Retrieving your list...</p>
+          </div>
+        ) : bookmarks.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-32 text-center">
             <Flame className="w-16 h-16 text-gray-600 mb-4" />
             <h3 className="text-xl font-bold text-gray-300">Your list is empty</h3>

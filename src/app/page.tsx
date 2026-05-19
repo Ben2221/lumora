@@ -77,7 +77,7 @@ export default async function Home() {
         {/* Dynamic client Recommendations */}
         <RecommendationsRow />
 
-        <ContentCarousel title="Only on Lumora" items={originals} />
+        <ContentCarousel title="Featured on Lumora" items={originals} />
         <ContentCarousel title="New Releases" items={newReleasesList} />
         <ContentCarousel title="Sci-Fi & Fantasy" items={scifi} />
         <ContentCarousel title="Action Thrillers" items={action} />

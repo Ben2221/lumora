@@ -3,19 +3,24 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, Bell, User, X, LogOut, Settings, HelpCircle, Users } from 'lucide-react';
+import { Search, Bell, User, X, LogOut, Settings, HelpCircle, Users, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MediaItem } from '@/lib/mockData';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<MediaItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   
   const pathname = usePathname();
   const router = useRouter();
   
+  const searchRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -38,16 +43,85 @@ export default function Navbar() {
       if (accountRef.current && !accountRef.current.contains(e.target as Node)) {
         setIsAccountOpen(false);
       }
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Keyboard accessibility for search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowDropdown(false);
+        setIsSearchOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Debounced search suggestions fetching
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (query.length < 2) {
+      const clearTimer = setTimeout(() => {
+        setSuggestions([]);
+        setShowDropdown(false);
+        setIsSearching(false);
+      }, 0);
+      return () => clearTimeout(clearTimer);
+    }
+
+    const startTimer = setTimeout(() => {
+      setIsSearching(true);
+      setShowDropdown(true);
+    }, 0);
+
+    const searchTimer = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setSuggestions(data.slice(0, 3));
+          } else {
+            setSuggestions([]);
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching search suggestions:', err);
+          setSuggestions([]);
+        })
+        .finally(() => {
+          setIsSearching(false);
+        });
+    }, 300); // 300ms debounce for typing
+
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(searchTimer);
+    };
+  }, [searchQuery]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsSearchOpen(false);
+      setShowDropdown(false);
+      setSearchQuery('');
+    }
+  };
+
+  const handleSeeAll = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+      setShowDropdown(false);
+      setSearchQuery('');
     }
   };
 
@@ -115,7 +189,7 @@ export default function Navbar() {
           <div className="flex items-center gap-4 sm:gap-6 relative">
             
             {/* Search Input Bar */}
-            <div className="relative flex items-center">
+            <div ref={searchRef} className="relative flex items-center">
               <AnimatePresence>
                 {isSearchOpen && (
                   <motion.form
@@ -144,6 +218,83 @@ export default function Navbar() {
                       <X className="w-3.5 h-3.5" />
                     </button>
                   </motion.form>
+                )}
+              </AnimatePresence>
+
+              {/* Autocomplete Suggestions Dropdown */}
+              <AnimatePresence>
+                {isSearchOpen && showDropdown && searchQuery.trim().length >= 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute right-0 top-full mt-3 w-80 bg-black/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-2xl overflow-hidden z-[110]"
+                  >
+                    {isSearching ? (
+                      <div className="flex items-center justify-center p-6 gap-2">
+                        <Loader2 className="w-4 h-4 text-[#e50914] animate-spin" />
+                        <span className="text-xs text-gray-400">Searching...</span>
+                      </div>
+                    ) : suggestions.length === 0 ? (
+                      <div className="p-4 text-center">
+                        <p className="text-xs text-gray-500">No matches found for &quot;{searchQuery}&quot;</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="p-2 border-b border-white/5 bg-white/5 text-left">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Top Results</span>
+                        </div>
+                        <div className="divide-y divide-white/5">
+                          {suggestions.map((item) => (
+                            <Link
+                              key={item.id}
+                              href={`/info/${item.type}/${item.id}`}
+                              onClick={() => {
+                                setShowDropdown(false);
+                                setIsSearchOpen(false);
+                                setSearchQuery('');
+                              }}
+                              className="flex items-center gap-3 p-3 hover:bg-white/5 transition-colors group cursor-pointer text-left"
+                            >
+                              <div className="relative w-10 h-14 bg-white/10 rounded overflow-hidden shrink-0">
+                                <img
+                                  src={item.poster_path}
+                                  alt={item.title}
+                                  className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-bold text-white truncate group-hover:text-[#e50914] transition-colors">
+                                  {item.title}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-[10px] text-gray-400">
+                                    {item.release_date ? item.release_date.slice(0, 4) : 'N/A'}
+                                  </span>
+                                  <span className="text-[10px] px-1 py-0.2 bg-[#e50914] text-white rounded font-bold uppercase">
+                                    {item.type}
+                                  </span>
+                                  {item.vote_average > 0 && (
+                                    <span className="text-[10px] text-emerald-400 font-semibold">
+                                      ★ {item.vote_average.toFixed(1)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                        <div className="p-2 border-t border-white/5 text-center bg-black/40">
+                          <button
+                            onClick={handleSeeAll}
+                            className="text-[10px] font-bold text-[#e50914] hover:underline"
+                          >
+                            See all results for &quot;{searchQuery}&quot;
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </motion.div>
                 )}
               </AnimatePresence>
               

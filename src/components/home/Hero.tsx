@@ -54,6 +54,11 @@ export default function Hero({ movies, movie }: { movies?: MediaItem[]; movie?: 
 
   if (!activeMovies || activeMovies.length === 0) return null;
   const activeMovie = activeMovies[currentIndex];
+  const watchUrl = activeMovie
+    ? (activeMovie.type === 'tv'
+      ? `/watch/tv/${activeMovie.id}?season=1&episode=1`
+      : `/watch/movie/${activeMovie.id}`)
+    : '';
 
   // Cinematic backdrop cross-fade zoom variants
   const slideVariants = {
@@ -161,7 +166,7 @@ export default function Hero({ movies, movie }: { movies?: MediaItem[]; movie?: 
               
               <div className="flex items-center gap-4">
                 <Link 
-                  href={`/watch/${activeMovie.type}/${activeMovie.id}`}
+                  href={watchUrl}
                   className="flex items-center gap-3 bg-white text-black px-6 sm:px-8 py-3.5 sm:py-4 rounded font-bold text-base sm:text-lg hover:bg-[#e50914] hover:text-white hover:scale-105 transition-all duration-300 shadow-xl"
                 >
                   <Play className="w-5 h-5 fill-current" />

@@ -21,6 +21,7 @@ export default function WatchPage() {
   const type = params.type as 'movie' | 'tv';
 
   const [title, setTitle] = useState<string>('Loading...');
+  const [showControls, setShowControls] = useState(true);
 
   useEffect(() => {
     if (!id || !type) return;
@@ -54,23 +55,51 @@ export default function WatchPage() {
       .catch(() => setTitle('Watch Live'));
   }, [id, type]);
 
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const handleActivity = () => {
+      setShowControls(true);
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setShowControls(false);
+      }, 3000);
+    };
+
+    // Keep controls visible initially, then hide after 3 seconds
+    timeoutId = setTimeout(() => {
+      setShowControls(false);
+    }, 3000);
+
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('touchstart', handleActivity);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 bg-black z-[100] flex flex-col">
+    <div className="fixed inset-0 bg-black z-[100] flex flex-col group select-none">
       {/* Header Overlay */}
-      <div className="absolute top-0 left-0 w-full p-6 z-50 flex items-center gap-6 bg-gradient-to-b from-black/80 to-transparent pointer-events-none transition-opacity duration-300 hover:opacity-100 opacity-0 group">
+      <div className={`absolute top-0 left-0 w-full p-6 z-50 flex items-center gap-6 bg-gradient-to-b from-black/90 via-black/45 to-transparent transition-all duration-500 pointer-events-none ${
+        showControls ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+      }`}>
         <button 
           onClick={() => router.back()}
-          className="pointer-events-auto flex items-center justify-center w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all hover:scale-110"
+          className="pointer-events-auto flex items-center justify-center w-12 h-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-white/20 transition-all hover:scale-110 active:scale-95"
         >
           <ArrowLeft className="w-6 h-6 text-white" />
         </button>
-        <h1 className="text-white text-2xl font-bold tracking-wide pointer-events-auto">
+        <h1 className="text-white text-2xl font-bold tracking-wide pointer-events-auto drop-shadow-lg font-display">
           {title}
         </h1>
       </div>
 
       {/* Player Container */}
-      <div className="flex-1 w-full relative group">
+      <div className="flex-1 w-full relative">
         <Suspense fallback={
           <div className="w-full h-full bg-black flex items-center justify-center">
             <p className="text-gray-400 font-medium">Initializing Player...</p>
@@ -78,9 +107,6 @@ export default function WatchPage() {
         }>
           <PlayerWithParams id={id} type={type} />
         </Suspense>
-        
-        {/* Helper overlay to make top header show on hover near top */}
-        <div className="absolute top-0 left-0 w-full h-32 z-40 bg-transparent" />
       </div>
     </div>
   );
