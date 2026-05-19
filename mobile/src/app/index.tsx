@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -22,6 +22,8 @@ import {
   comedyMovies
 } from '@/constants/mockData';
 import { useWatchlist } from '@/hooks/useWatchlist';
+import { useContinueWatching } from '@/hooks/useContinueWatching';
+import { API_BASE_URL } from '@/constants/api';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { TabBar } from '@/components/TabBar';
@@ -35,9 +37,50 @@ export default function HomeScreen() {
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'movies' | 'tv'>('all');
+  const { continueWatchingList } = useContinueWatching();
+
+  const [lists, setLists] = useState<{
+    trending: MediaItem[];
+    originals: MediaItem[];
+    blockbusters: MediaItem[];
+    comedies: MediaItem[];
+  }>({
+    trending: trendingMovies,
+    originals: lumoraOriginals,
+    blockbusters: topRatedMovies,
+    comedies: comedyMovies,
+  });
+
+  useEffect(() => {
+    let active = true;
+    const fetchLists = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/media/lists`);
+        if (!res.ok) throw new Error('HTTP Error: ' + res.status);
+        const json = await res.json();
+        if (active && json) {
+          setLists({
+            trending: json.trending && json.trending.length > 0 ? json.trending : trendingMovies,
+            originals: json.originals && json.originals.length > 0 ? json.originals : lumoraOriginals,
+            blockbusters: json.blockbusters && json.blockbusters.length > 0 ? json.blockbusters : topRatedMovies,
+            comedies: json.comedies && json.comedies.length > 0 ? json.comedies : comedyMovies,
+          });
+        }
+      } catch (err) {
+        console.warn('[Home] Failed to fetch fresh TMDB media lists, using offline cache:', err);
+      }
+    };
+
+    fetchLists();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Featured Hero Item (Interstellar or Squid Game depending on filter)
-  const heroItem: MediaItem = activeFilter === 'tv' ? mockTVShows[0] : trendingMovies[0];
+  const heroItem: MediaItem = activeFilter === 'tv'
+    ? (lists.originals.length > 0 ? lists.originals[0] : mockTVShows[0])
+    : (lists.trending.length > 0 ? lists.trending[0] : trendingMovies[0]);
 
   const handleMediaPress = (item: MediaItem) => {
     router.push({
@@ -101,7 +144,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Top Header Filter Navigation */}
-      <View style={[styles.header, { paddingTop: Math.max(safeAreaInsets.top, Spacing.two) }]}>
+      <View style={[styles.header, { paddingTop: safeAreaInsets.top > 0 ? safeAreaInsets.top + 12 : 40 }]}>
         <Text style={styles.logoText}>LUMORA</Text>
         
         <View style={styles.filterRow}>
@@ -199,11 +242,11 @@ export default function HomeScreen() {
         </View>
 
         {/* Carousel Rows */}
-        {activeFilter !== 'movies' && renderMediaRow("Only on Lumora", lumoraOriginals)}
-        {renderMediaRow("Trending Now", trendingMovies)}
-        {activeFilter !== 'tv' && renderMediaRow("Blockbuster Movies", topRatedMovies)}
-        {renderMediaRow("Critically Acclaimed", newReleases)}
-        {renderMediaRow("Popular Comedies", comedyMovies)}
+        {continueWatchingList.length > 0 && renderMediaRow("Continue Watching", continueWatchingList)}
+        {activeFilter !== 'movies' && renderMediaRow("Only on Lumora", lists.originals)}
+        {renderMediaRow("Trending Now", lists.trending)}
+        {activeFilter !== 'tv' && renderMediaRow("Blockbuster Movies", lists.blockbusters)}
+        {renderMediaRow("Popular Comedies", lists.comedies)}
       </ScrollView>
       <TabBar activeTab="home" />
     </View>

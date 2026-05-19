@@ -22,6 +22,7 @@ import {
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { TabBar } from '@/components/TabBar';
+import { API_BASE_URL } from '@/constants/api';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - Spacing.four * 2 - Spacing.two * 2) / 3;
@@ -39,20 +40,37 @@ export default function ExploreScreen() {
   const allMedia = [...trendingMovies, ...newReleases, ...mockTVShows];
 
   useEffect(() => {
-    const trimmed = query.trim().toLowerCase();
+    const trimmed = query.trim();
     if (trimmed.length < 2) {
       // Show default recommendations when search is empty
       setResults(allMedia.slice(0, 9));
       return;
     }
 
-    const filtered = allMedia.filter(item => 
-      item.title.toLowerCase().includes(trimmed) || 
-      item.overview.toLowerCase().includes(trimmed)
-    );
-    // Remove duplicates by ID
-    const unique = filtered.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
-    setResults(unique);
+    let active = true;
+    const delayDebounce = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(trimmed)}`);
+        if (!res.ok) throw new Error('Search failed');
+        const json = await res.json();
+        if (active && json) {
+          setResults(json);
+        }
+      } catch (err) {
+        console.warn('[Search] Fallback to local search filter:', err);
+        const filtered = allMedia.filter(item => 
+          item.title.toLowerCase().includes(trimmed.toLowerCase()) || 
+          item.overview.toLowerCase().includes(trimmed.toLowerCase())
+        );
+        const unique = filtered.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+        if (active) setResults(unique);
+      }
+    }, 300);
+
+    return () => {
+      active = false;
+      clearTimeout(delayDebounce);
+    };
   }, [query]);
 
   const renderItem = ({ item }: { item: MediaItem }) => (
@@ -82,7 +100,7 @@ export default function ExploreScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Search Header Area */}
-      <View style={[styles.header, { paddingTop: Math.max(safeAreaInsets.top, Spacing.three) }]}>
+      <View style={[styles.header, { paddingTop: safeAreaInsets.top > 0 ? safeAreaInsets.top + 12 : 40 }]}>
         <View style={[
           styles.searchBox,
           isFocused && styles.searchBoxFocused

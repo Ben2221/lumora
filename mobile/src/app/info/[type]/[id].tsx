@@ -8,7 +8,8 @@ import {
   Dimensions, 
   Modal, 
   FlatList,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +25,7 @@ import {
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { API_BASE_URL } from '@/constants/api';
 
 const { width } = Dimensions.get('window');
 
@@ -37,41 +39,95 @@ export default function InfoScreen() {
   const [media, setMedia] = useState<MediaItem | null>(null);
   const [selectedSeason, setSelectedSeason] = useState(1);
   const [isSeasonModalVisible, setIsSeasonModalVisible] = useState(false);
+  const [episodes, setEpisodes] = useState<any[]>([]);
+  const [episodesLoading, setEpisodesLoading] = useState(false);
 
-  // Fetch or mock search for the details
+  // Fetch real media details from Next.js backend
   useEffect(() => {
-    if (!id) return;
-    const mediaId = parseInt(id);
-    let match: MediaItem | undefined;
+    if (!id || !type) return;
+    
+    let active = true;
+    const fetchDetails = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/media/${type}/${id}`);
+        if (!res.ok) throw new Error('Details fetch failed');
+        const json = await res.json();
+        if (active && json) {
+          setMedia(json);
+        }
+      } catch (err) {
+        console.warn('[Info] Failed to fetch real media details, using fallback:', err);
+        const mediaId = parseInt(id);
+        let match: MediaItem | undefined;
 
-    if (type === 'tv') {
-      match = mockTVShows.find(s => s.id === mediaId);
-    } else {
-      match = [...trendingMovies, ...newReleases].find(m => m.id === mediaId);
-    }
+        if (type === 'tv') {
+          match = mockTVShows.find(s => s.id === mediaId);
+        } else {
+          match = [...trendingMovies, ...newReleases].find(m => m.id === mediaId);
+        }
 
-    if (match) {
-      setMedia(match);
-    } else {
-      // Fallback detail item if not found in mock listings
-      setMedia({
-        id: mediaId,
-        title: type === 'tv' ? 'Featured Series' : 'Featured Film',
-        overview: 'Browse premium content streaming on Lumora.',
-        poster_path: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-        backdrop_path: 'https://image.tmdb.org/t/p/original/pbrkL804c8yAv3zBZR4QPEafpAR.jpg',
-        release_date: '2024',
-        vote_average: 8.0,
-        type: type,
-        genres: [{ id: 1, name: 'Drama' }],
-        cast: [
-          { id: 1, name: 'Lead Actor', character: 'Hero', profile_path: null },
-          { id: 2, name: 'Supporting Star', character: 'Sidekick', profile_path: null }
-        ],
-        director: 'Lumora Director'
-      });
-    }
+        if (active) {
+          setMedia(match || {
+            id: mediaId,
+            title: type === 'tv' ? 'Featured Series' : 'Featured Film',
+            overview: 'Browse premium content streaming on Lumora.',
+            poster_path: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
+            backdrop_path: 'https://image.tmdb.org/t/p/original/pbrkL804c8yAv3zBZR4QPEafpAR.jpg',
+            release_date: '2024',
+            vote_average: 8.0,
+            type: type,
+            genres: [{ id: 1, name: 'Drama' }],
+            cast: [
+              { id: 1, name: 'Lead Actor', character: 'Hero', profile_path: null },
+              { id: 2, name: 'Supporting Star', character: 'Sidekick', profile_path: null }
+            ],
+            director: 'Lumora Director'
+          });
+        }
+      }
+    };
+
+    fetchDetails();
+    return () => {
+      active = false;
+    };
   }, [type, id]);
+
+  // Fetch real episodes for TV shows
+  useEffect(() => {
+    if (type !== 'tv' || !id) return;
+
+    let active = true;
+    const fetchEpisodes = async () => {
+      setEpisodesLoading(true);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/tv/${id}/season/${selectedSeason}`);
+        if (!res.ok) throw new Error('Failed to fetch episodes');
+        const json = await res.json();
+        if (active) {
+          setEpisodes(json);
+        }
+      } catch (err) {
+        console.warn('[Info] Failed to fetch episodes, generating mock data:', err);
+        const episodeCount = media?.seasons?.find(s => s.season_number === selectedSeason)?.episode_count || 8;
+        const generated = Array.from({ length: episodeCount }, (_, i) => ({
+          id: i + 1,
+          name: `Episode ${i + 1}`,
+          overview: `Episode ${i + 1} of Season ${selectedSeason}.`,
+          episode_number: i + 1,
+          season_number: selectedSeason
+        }));
+        if (active) setEpisodes(generated);
+      } finally {
+        if (active) setEpisodesLoading(false);
+      }
+    };
+
+    fetchEpisodes();
+    return () => {
+      active = false;
+    };
+  }, [type, id, selectedSeason, media]);
 
   if (!media) {
     return (
@@ -245,35 +301,50 @@ export default function InfoScreen() {
                 <ChevronDown color="#fff" size={16} />
               </TouchableOpacity>
 
-              {/* Episode Mock List */}
+              {/* Episode List */}
               <View style={styles.episodeList}>
-                {Array.from({ length: media.seasons.find(s => s.season_number === selectedSeason)?.episode_count || 8 }).map((_, epIdx) => (
-                  <TouchableOpacity
-                    key={epIdx}
-                    activeOpacity={0.8}
-                    style={styles.episodeRow}
-                    onPress={() => {
-                      router.push({
-                        pathname: '/watch/[type]/[id]',
-                        params: { 
-                          type: 'tv', 
-                          id: media.id.toString(), 
-                          season: selectedSeason.toString(), 
-                          episode: (epIdx + 1).toString() 
-                        }
-                      } as any);
-                    }}
-                  >
-                    <View style={styles.episodeInfo}>
-                      <Text style={styles.episodeNumber}>{epIdx + 1}</Text>
-                      <View style={styles.episodeMeta}>
-                        <Text style={styles.episodeTitle}>Episode {epIdx + 1}</Text>
-                        <Text style={[styles.episodeDuration, { color: theme.textSecondary }]}>45 min</Text>
+                {episodesLoading ? (
+                  <ActivityIndicator size="small" color="#e50914" style={{ marginVertical: 20 }} />
+                ) : (
+                  episodes.map((episodeItem, epIdx) => (
+                    <TouchableOpacity
+                      key={episodeItem.id || epIdx}
+                      activeOpacity={0.8}
+                      style={styles.episodeRow}
+                      onPress={() => {
+                        router.push({
+                          pathname: '/watch/[type]/[id]',
+                          params: { 
+                            type: 'tv', 
+                            id: media.id.toString(), 
+                            season: selectedSeason.toString(), 
+                            episode: episodeItem.episode_number.toString() 
+                          }
+                        } as any);
+                      }}
+                    >
+                      <View style={styles.episodeInfo}>
+                        <Text style={styles.episodeNumber}>{episodeItem.episode_number}</Text>
+                        {episodeItem.still_path ? (
+                          <Image 
+                            source={{ uri: episodeItem.still_path }} 
+                            style={styles.episodeImage} 
+                            contentFit="cover"
+                          />
+                        ) : null}
+                        <View style={styles.episodeMeta}>
+                          <Text style={styles.episodeTitle} numberOfLines={1}>
+                            {episodeItem.name}
+                          </Text>
+                          <Text style={[styles.episodeOverviewText, { color: theme.textSecondary }]} numberOfLines={2}>
+                            {episodeItem.overview || 'No description available.'}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
-                    <Play color="#e50914" size={14} fill="#e50914" />
-                  </TouchableOpacity>
-                ))}
+                      <Play color="#e50914" size={14} fill="#e50914" />
+                    </TouchableOpacity>
+                  ))
+                )}
               </View>
             </View>
           )}
@@ -627,5 +698,16 @@ const styles = StyleSheet.create({
   modalOptionCount: {
     color: '#60646C',
     fontSize: 12,
+  },
+  episodeImage: {
+    width: 80,
+    height: 45,
+    borderRadius: 4,
+    backgroundColor: '#1a1a1a',
+  },
+  episodeOverviewText: {
+    fontSize: 11,
+    marginTop: 2,
+    maxWidth: width - 180,
   },
 });
