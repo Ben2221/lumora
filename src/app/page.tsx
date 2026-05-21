@@ -3,6 +3,7 @@ import Hero from '@/components/home/Hero';
 import ContentCarousel from '@/components/home/ContentCarousel';
 import ContinueWatchingRow from '@/components/home/ContinueWatchingRow';
 import RecommendationsRow from '@/components/home/RecommendationsRow';
+import MobilePromo from '@/components/home/MobilePromo';
 import { 
   getTrending, 
   getNewReleases,
@@ -91,6 +92,9 @@ export default async function Home() {
         <ContentCarousel title="Dramas" items={drama} />
         <ContentCarousel title="Top Rated" items={topRated} />
         <ContentCarousel title="Comedy Hits" items={comedy} />
+        
+        {/* Promo banner for downloading the APK */}
+        <MobilePromo />
       </div>
     </main>
   );

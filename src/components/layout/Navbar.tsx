@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, Bell, User, X, LogOut, Settings, HelpCircle, Users, Loader2 } from 'lucide-react';
+import { Search, Bell, User, X, LogOut, Settings, HelpCircle, Users, Loader2, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MediaItem } from '@/lib/mockData';
 
@@ -133,6 +133,7 @@ export default function Navbar() {
     { name: 'Movies', path: '/movies' },
     { name: 'New & Popular', path: '/new' },
     { name: 'My List', path: '/my-list' },
+    { name: 'Mobile App', path: '/download' },
   ];
 
   const mockNotifications = [
@@ -188,7 +189,17 @@ export default function Navbar() {
           </div>
 
           {/* Right Side: Interactive Search, Notifications, & Account */}
-          <div className="flex items-center gap-4 sm:gap-6 relative">
+          <div className="flex items-center gap-3 sm:gap-5 relative">
+            
+            {/* Get App Icon/Button */}
+            <Link
+              href="/download"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-xs font-bold text-white bg-white/5 hover:bg-[#e50914] border border-white/10 hover:border-[#e50914] rounded-full transition-all duration-300 backdrop-blur-md active:scale-95 shadow-[0_2px_10px_rgba(0,0,0,0.3)] group shrink-0"
+              title="Download Android APK"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-[#e50914] group-hover:text-white transition-colors shrink-0" />
+              <span className="hidden sm:inline">Get App</span>
+            </Link>
             
             {/* Search Input Bar */}
             <div ref={searchRef} className="relative flex items-center">
