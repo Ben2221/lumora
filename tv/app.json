@@ -8,7 +8,8 @@
     "scheme": "lumora-tv",
     "userInterfaceStyle": "dark",
     "ios": {
-      "icon": "./assets/images/icon.png"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "com.savvy2221.lumoratv"
     },
     "android": {
       "adaptiveIcon": {
@@ -48,7 +49,9 @@
           "android": {
             "enableMinifyInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true,
-            "buildArchs": ["arm64-v8a"]
+            "buildArchs": [
+              "arm64-v8a"
+            ]
           }
         }
       ]
