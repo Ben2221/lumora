@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -7,6 +7,8 @@ import {
   FlatList, 
   Pressable, 
   Dimensions,
+  Animated,
+  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -94,33 +96,74 @@ export default function TVExploreScreen() {
     });
   };
 
-  const renderItem = ({ item }: { item: MediaItem }) => (
-    <Pressable
-      focusable={true}
-      style={({ focused }: any) => [
-        styles.card,
-        focused && styles.cardFocused
-      ]}
-      onPress={() => handleMediaPress(item)}
-    >
-      {({ focused }: any) => (
-        <View style={styles.cardInner}>
-          <Image
-            source={{ uri: item.poster_path }}
-            style={styles.image}
-            contentFit="cover"
-          />
-          {item.type === 'tv' && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>SERIES</Text>
+  const MovieCard = ({ item, onPress }: { item: MediaItem; onPress: () => void }) => {
+    const scale = useRef(new Animated.Value(1)).current;
+    const [cardFocused, setCardFocused] = useState(false);
+
+    const handleFocus = () => {
+      setCardFocused(true);
+      Animated.timing(scale, {
+        toValue: 1.12,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handleBlur = () => {
+      setCardFocused(false);
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    return (
+      <Animated.View 
+        style={[
+          { 
+            transform: [{ scale }], 
+            zIndex: cardFocused ? 20 : 1,
+          },
+          Platform.OS === 'android' && {
+            elevation: cardFocused ? 20 : 0,
+          }
+        ]}
+      >
+        <Pressable
+          focusable={true}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onPress={onPress}
+          style={({ focused }: any) => [
+            styles.card,
+            focused && styles.cardFocused
+          ]}
+        >
+          {({ focused }: any) => (
+            <View style={styles.cardInner}>
+              <Image
+                source={{ uri: item.poster_path }}
+                style={styles.image}
+                contentFit="cover"
+              />
+              {item.type === 'tv' && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>SERIES</Text>
+                </View>
+              )}
+              {focused && (
+                <View style={styles.cardFocusedBorder} />
+              )}
             </View>
           )}
-          {focused && (
-            <View style={styles.cardFocusedBorder} />
-          )}
-        </View>
-      )}
-    </Pressable>
+        </Pressable>
+      </Animated.View>
+    );
+  };
+
+  const renderItem = ({ item }: { item: MediaItem }) => (
+    <MovieCard item={item} onPress={() => handleMediaPress(item)} />
   );
 
   return (
@@ -236,7 +279,8 @@ const styles = StyleSheet.create({
   gridRow: {
     justifyContent: 'flex-start',
     gap: 16,
-    marginBottom: 16,
+    paddingVertical: 12, // Extra vertical space so scaled cards are not clipped
+    marginBottom: 4, // Reduced to offset the vertical padding
   },
   card: {
     width: COLUMN_WIDTH,
@@ -244,10 +288,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#141414',
+    borderWidth: 3,
+    borderColor: 'transparent',
   },
   cardFocused: {
-    transform: [{ scale: 1.06 }],
     zIndex: 10,
+    borderColor: '#e50914',
+    borderWidth: 4,
+    backgroundColor: '#141414', // Dark background so card is not solid red
+    boxShadow: '0px 10px 20px rgba(229, 9, 20, 0.85)',
+    elevation: 12, // Android TV shadow depth
   },
   cardInner: {
     width: '100%',

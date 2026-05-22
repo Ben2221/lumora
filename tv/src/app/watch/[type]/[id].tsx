@@ -135,6 +135,15 @@ export default function TVWatchScreen() {
     if (webviewRef.current) {
       const playCmd = `
         try {
+          var vids = document.querySelectorAll('video');
+          vids.forEach(function(v) { v.play(); });
+          var iframes = document.querySelectorAll('iframe');
+          iframes.forEach(function(f) {
+            try {
+              f.contentWindow.postMessage(JSON.stringify({ event: 'play' }), '*');
+              f.contentWindow.postMessage('play', '*');
+            } catch(e){}
+          });
           window.postMessage(JSON.stringify({ event: 'play' }), '*');
           window.postMessage({ event: 'play' }, '*');
         } catch(e) {}
@@ -162,6 +171,42 @@ export default function TVWatchScreen() {
             if (!data.isCenter) {
               setShowControls(prev => !prev);
             }
+          }
+        } else if (data.event === 'webview_keydown') {
+          const code = data.keyCode;
+          // Space bar (32) or D-pad Enter/Select (13 or 23)
+          if (code === 32 || code === 13 || code === 23) {
+            if (!isPaused) {
+              setIsPaused(true);
+              setShowControls(true);
+              if (webviewRef.current) {
+                const pauseCmd = `
+                  try {
+                    var vids = document.querySelectorAll('video');
+                    vids.forEach(function(v) { v.pause(); });
+                    var iframes = document.querySelectorAll('iframe');
+                    iframes.forEach(function(f) {
+                      try {
+                        f.contentWindow.postMessage(JSON.stringify({ event: 'pause' }), '*');
+                        f.contentWindow.postMessage('pause', '*');
+                      } catch(e){}
+                    });
+                    window.postMessage(JSON.stringify({ event: 'pause' }), '*');
+                    window.postMessage({ event: 'pause' }, '*');
+                  } catch(e) {}
+                  true;
+                `;
+                webviewRef.current.injectJavaScript(pauseCmd);
+              }
+            } else {
+              handlePlayClick();
+            }
+          } else if (code === 38 || code === 40 || code === 37 || code === 39) {
+            // D-pad arrow keys: show the controls overlay so they can see the back button
+            setShowControls(true);
+          } else if (code === 27 || code === 8 || code === 4) {
+            // Back/Escape/Backspace: toggle overlay visibility
+            setShowControls(prev => !prev);
           }
         }
       }
@@ -192,6 +237,24 @@ export default function TVWatchScreen() {
           window.ReactNativeWebView.postMessage(JSON.stringify({
             event: 'webview_click',
             isCenter: isCenter
+          }));
+        } catch(err) {}
+      });
+
+      document.addEventListener('keydown', function(e) {
+        var key = e.key || '';
+        var keyCode = e.keyCode || e.which;
+        
+        // Prevent default spacebar/Enter scrolling/behaviors on TV browsers
+        if (keyCode === 32 || keyCode === 13 || keyCode === 23) {
+          e.preventDefault();
+        }
+        
+        try {
+          window.ReactNativeWebView.postMessage(JSON.stringify({
+            event: 'webview_keydown',
+            key: key,
+            keyCode: keyCode
           }));
         } catch(err) {}
       });

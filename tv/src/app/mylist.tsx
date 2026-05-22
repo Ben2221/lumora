@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, StyleSheet, FlatList, Pressable, Text, Dimensions } from 'react-native';
+import React, { useRef, useState, useCallback } from 'react';
+import { View, StyleSheet, FlatList, Pressable, Text, Dimensions, Animated, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { MediaItem } from '@/constants/mockData';
 import { Spacing } from '@/constants/theme';
@@ -19,9 +19,11 @@ export default function TVMyListScreen() {
   const router = useRouter();
   const safeAreaInsets = useSafeAreaInsets();
 
-  React.useEffect(() => {
-    refreshWatchlist();
-  }, [watchlist]);
+  useFocusEffect(
+    useCallback(() => {
+      refreshWatchlist();
+    }, [])
+  );
 
   const handleMediaPress = (item: MediaItem) => {
     router.push({
@@ -30,31 +32,72 @@ export default function TVMyListScreen() {
     });
   };
 
-  const renderItem = ({ item }: { item: MediaItem }) => (
-    <Pressable
-      focusable={true}
-      style={({ focused }: any) => [
-        styles.card,
-        focused && styles.cardFocused
-      ]}
-      onPress={() => handleMediaPress(item)}
-    >
-      {({ focused }: any) => (
-        <View style={styles.cardInner}>
-          <Image
-            source={{ uri: item.poster_path }}
-            style={styles.image}
-            contentFit="cover"
-          />
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{item.type.toUpperCase()}</Text>
-          </View>
-          {focused && (
-            <View style={styles.cardFocusedBorder} />
+  const MovieCard = ({ item, onPress }: { item: MediaItem; onPress: () => void }) => {
+    const scale = useRef(new Animated.Value(1)).current;
+    const [isFocused, setIsFocused] = useState(false);
+
+    const handleFocus = () => {
+      setIsFocused(true);
+      Animated.timing(scale, {
+        toValue: 1.12,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handleBlur = () => {
+      setIsFocused(false);
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    return (
+      <Animated.View 
+        style={[
+          { 
+            transform: [{ scale }], 
+            zIndex: isFocused ? 20 : 1,
+          },
+          Platform.OS === 'android' && {
+            elevation: isFocused ? 20 : 0,
+          }
+        ]}
+      >
+        <Pressable
+          focusable={true}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onPress={onPress}
+          style={({ focused }: any) => [
+            styles.card,
+            focused && styles.cardFocused
+          ]}
+        >
+          {({ focused }: any) => (
+            <View style={styles.cardInner}>
+              <Image
+                source={{ uri: item.poster_path }}
+                style={styles.image}
+                contentFit="cover"
+              />
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{item.type.toUpperCase()}</Text>
+              </View>
+              {focused && (
+                <View style={styles.cardFocusedBorder} />
+              )}
+            </View>
           )}
-        </View>
-      )}
-    </Pressable>
+        </Pressable>
+      </Animated.View>
+    );
+  };
+
+  const renderItem = ({ item }: { item: MediaItem }) => (
+    <MovieCard item={item} onPress={() => handleMediaPress(item)} />
   );
 
   return (
@@ -78,7 +121,14 @@ export default function TVMyListScreen() {
               ]}
               onPress={() => router.push('/')}
             >
-              <Text style={styles.exploreButtonText}>Find Something to Watch</Text>
+              {({ focused }: any) => (
+                <Text style={[
+                  styles.exploreButtonText,
+                  focused && { color: '#000' }
+                ]}>
+                  Find Something to Watch
+                </Text>
+              )}
             </Pressable>
           </View>
         ) : (
@@ -126,7 +176,8 @@ const styles = StyleSheet.create({
   row: {
     justifyContent: 'flex-start',
     gap: 16,
-    marginBottom: 16,
+    paddingVertical: 12, // Extra vertical space so scaled cards are not clipped
+    marginBottom: 4, // Reduced to offset the vertical padding
   },
   card: {
     width: COLUMN_WIDTH,
@@ -134,10 +185,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#141414',
+    borderWidth: 3,
+    borderColor: 'transparent',
   },
   cardFocused: {
-    transform: [{ scale: 1.06 }],
     zIndex: 10,
+    borderColor: '#e50914',
+    borderWidth: 4,
+    backgroundColor: '#141414', // Dark background so card is not solid red
+    boxShadow: '0px 10px 20px rgba(229, 9, 20, 0.85)',
+    elevation: 12, // Android TV shadow depth
   },
   cardInner: {
     width: '100%',

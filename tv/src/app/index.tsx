@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,8 @@ import {
   ScrollView,
   Pressable,
   Dimensions,
+  Animated,
+  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -140,6 +142,73 @@ export default function TVHomeScreen() {
     }
   };
 
+  const MovieCard = ({ item, onFocus, onPress }: { item: MediaItem; onFocus: () => void; onPress: () => void }) => {
+    const scale = useRef(new Animated.Value(1)).current;
+    const [isFocused, setIsFocused] = useState(false);
+
+    const handleFocus = () => {
+      setIsFocused(true);
+      onFocus();
+      Animated.timing(scale, {
+        toValue: 1.15,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handleBlur = () => {
+      setIsFocused(false);
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    return (
+      <Animated.View 
+        style={[
+          { 
+            transform: [{ scale }], 
+            zIndex: isFocused ? 20 : 1,
+          },
+          Platform.OS === 'android' && {
+            elevation: isFocused ? 20 : 0,
+          }
+        ]}
+      >
+        <Pressable
+          focusable={true}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onPress={onPress}
+          style={({ focused }: any) => [
+            styles.cardContainer,
+            focused && styles.cardContainerFocused
+          ]}
+        >
+          {({ focused }: any) => (
+            <View style={styles.cardInner}>
+              <Image
+                source={{ uri: item.poster_path }}
+                style={styles.cardImage}
+                contentFit="cover"
+              />
+              {item.type === 'tv' && (
+                <View style={styles.cardBadge}>
+                  <Text style={styles.cardBadgeText}>SERIES</Text>
+                </View>
+              )}
+              {focused && (
+                <View style={styles.cardFocusedBorder} />
+              )}
+            </View>
+          )}
+        </Pressable>
+      </Animated.View>
+    );
+  };
+
   const renderMediaRow = (title: string, data: MediaItem[]) => {
     if (!data || data.length === 0) return null;
 
@@ -164,34 +233,12 @@ export default function TVHomeScreen() {
           contentContainerStyle={styles.rowScroll}
         >
           {filteredData.map((item) => (
-            <Pressable
+            <MovieCard
               key={item.id}
-              focusable={true}
+              item={item}
               onFocus={() => setActiveHeroItem(item)}
               onPress={() => handleMediaPress(item)}
-              style={({ focused }: any) => [
-                styles.cardContainer,
-                focused && styles.cardContainerFocused
-              ]}
-            >
-              {({ focused }: any) => (
-                <View style={styles.cardInner}>
-                  <Image
-                    source={{ uri: item.poster_path }}
-                    style={styles.cardImage}
-                    contentFit="cover"
-                  />
-                  {item.type === 'tv' && (
-                    <View style={styles.cardBadge}>
-                      <Text style={styles.cardBadgeText}>SERIES</Text>
-                    </View>
-                  )}
-                  {focused && (
-                    <View style={styles.cardFocusedBorder} />
-                  )}
-                </View>
-              )}
-            </Pressable>
+            />
           ))}
         </ScrollView>
       </View>
@@ -202,6 +249,76 @@ export default function TVHomeScreen() {
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Main Content Area */}
       <View style={styles.contentWrapper}>
+        {/* Netflix-Style Top Navigation Bar (Logo and Sub-Navigation Tabs) */}
+        <View style={styles.topNavBar}>
+          <Text style={styles.topBarLogoText}>LUMORA</Text>
+          <View style={styles.topNavLinks}>
+            <Pressable
+              focusable={true}
+              style={({ focused }: any) => [
+                styles.topNavLink,
+                focused && styles.topNavLinkFocused,
+                activeFilter === 'all' && styles.topNavLinkActive
+              ]}
+              onPress={() => handleFilterChange('all')}
+            >
+              {({ focused }: any) => (
+                <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
+                  Home
+                </Text>
+              )}
+            </Pressable>
+            
+            <Pressable
+              focusable={true}
+              style={({ focused }: any) => [
+                styles.topNavLink,
+                focused && styles.topNavLinkFocused,
+                activeFilter === 'tv' && styles.topNavLinkActive
+              ]}
+              onPress={() => handleFilterChange('tv')}
+            >
+              {({ focused }: any) => (
+                <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
+                  TV Shows
+                </Text>
+              )}
+            </Pressable>
+
+            <Pressable
+              focusable={true}
+              style={({ focused }: any) => [
+                styles.topNavLink,
+                focused && styles.topNavLinkFocused,
+                activeFilter === 'movie' && styles.topNavLinkActive
+              ]}
+              onPress={() => handleFilterChange('movie')}
+            >
+              {({ focused }: any) => (
+                <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
+                  Movies
+                </Text>
+              )}
+            </Pressable>
+
+            <Pressable
+              focusable={true}
+              style={({ focused }: any) => [
+                styles.topNavLink,
+                focused && styles.topNavLinkFocused,
+                activeFilter === 'popular' && styles.topNavLinkActive
+              ]}
+              onPress={() => handleFilterChange('popular')}
+            >
+              {({ focused }: any) => (
+                <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
+                  New & Popular
+                </Text>
+              )}
+            </Pressable>
+          </View>
+        </View>
+
         <ScrollView 
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
@@ -224,76 +341,6 @@ export default function TVHomeScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.heroGradientHorizontal}
             />
-
-            {/* Netflix-Style Top Navigation Bar (Logo and Sub-Navigation Tabs) */}
-            <View style={styles.topNavBar}>
-              <Text style={styles.topBarLogoText}>LUMORA</Text>
-              <View style={styles.topNavLinks}>
-                <Pressable
-                  focusable={true}
-                  style={({ focused }: any) => [
-                    styles.topNavLink,
-                    focused && styles.topNavLinkFocused,
-                    activeFilter === 'all' && styles.topNavLinkActive
-                  ]}
-                  onPress={() => handleFilterChange('all')}
-                >
-                  {({ focused }: any) => (
-                    <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
-                      Home
-                    </Text>
-                  )}
-                </Pressable>
-                
-                <Pressable
-                  focusable={true}
-                  style={({ focused }: any) => [
-                    styles.topNavLink,
-                    focused && styles.topNavLinkFocused,
-                    activeFilter === 'tv' && styles.topNavLinkActive
-                  ]}
-                  onPress={() => handleFilterChange('tv')}
-                >
-                  {({ focused }: any) => (
-                    <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
-                      TV Shows
-                    </Text>
-                  )}
-                </Pressable>
-
-                <Pressable
-                  focusable={true}
-                  style={({ focused }: any) => [
-                    styles.topNavLink,
-                    focused && styles.topNavLinkFocused,
-                    activeFilter === 'movie' && styles.topNavLinkActive
-                  ]}
-                  onPress={() => handleFilterChange('movie')}
-                >
-                  {({ focused }: any) => (
-                    <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
-                      Movies
-                    </Text>
-                  )}
-                </Pressable>
-
-                <Pressable
-                  focusable={true}
-                  style={({ focused }: any) => [
-                    styles.topNavLink,
-                    focused && styles.topNavLinkFocused,
-                    activeFilter === 'popular' && styles.topNavLinkActive
-                  ]}
-                  onPress={() => handleFilterChange('popular')}
-                >
-                  {({ focused }: any) => (
-                    <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
-                      New & Popular
-                    </Text>
-                  )}
-                </Pressable>
-              </View>
-            </View>
 
             <View style={styles.heroInfoContainer}>
               <Text style={styles.heroTitle} numberOfLines={2}>
@@ -338,7 +385,7 @@ export default function TVHomeScreen() {
                   {({ focused }: any) => (
                     <>
                       <Play color={focused ? '#fff' : '#000'} size={24} fill={focused ? '#fff' : '#000'} />
-                      <Text style={[styles.playButtonText, focused && styles.buttonTextFocused]}>Play</Text>
+                      <Text style={[styles.playButtonText, focused && { color: '#fff' }]}>Play</Text>
                     </>
                   )}
                 </Pressable>
@@ -359,7 +406,11 @@ export default function TVHomeScreen() {
                       ) : (
                         <Plus color={focused ? '#000' : '#fff'} size={24} />
                       )}
-                      <Text style={[styles.listButtonText, focused && styles.buttonTextFocused, isBookmarked && !focused && { color: '#e50914' }]}>
+                      <Text style={[
+                        styles.listButtonText,
+                        focused ? { color: '#000' } : { color: '#fff' },
+                        isBookmarked && !focused && { color: '#e50914' }
+                      ]}>
                         {isBookmarked ? 'In Watchlist' : 'My List'}
                       </Text>
                     </>
@@ -378,7 +429,12 @@ export default function TVHomeScreen() {
                   {({ focused }: any) => (
                     <>
                       <Info color={focused ? '#000' : '#fff'} size={24} />
-                      <Text style={[styles.listButtonText, focused && styles.buttonTextFocused]}>Details</Text>
+                      <Text style={[
+                        styles.listButtonText,
+                        focused ? { color: '#000' } : { color: '#fff' }
+                      ]}>
+                        Details
+                      </Text>
                     </>
                   )}
                 </Pressable>
@@ -478,8 +534,9 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   topNavLinkFocused: {
-    backgroundColor: '#fff',
-    borderColor: '#fff',
+    backgroundColor: '#e50914',
+    borderColor: '#e50914',
+    transform: [{ scale: 1.05 }],
   },
   topNavLinkActive: {
     borderBottomWidth: 2,
@@ -492,7 +549,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit-Bold',
   },
   topNavLinkTextFocused: {
-    color: '#000',
+    color: '#fff',
   },
   heroInfoContainer: {
     position: 'absolute',
@@ -601,7 +658,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   rowContainer: {
-    marginTop: Spacing.five,
+    marginTop: Spacing.three, // Reduced to compensate for the vertical padding of rowScroll
   },
   rowTitle: {
     fontSize: 20,
@@ -614,6 +671,7 @@ const styles = StyleSheet.create({
   rowScroll: {
     paddingLeft: 40,
     paddingRight: 40,
+    paddingVertical: 18, // Extra vertical space so scaled cards are not clipped at top/bottom
     gap: 16,
   },
   cardContainer: {
@@ -623,10 +681,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#141414',
     position: 'relative',
+    borderWidth: 3,
+    borderColor: 'transparent',
   },
   cardContainerFocused: {
-    transform: [{ scale: 1.08 }],
     zIndex: 10,
+    borderColor: '#e50914',
+    borderWidth: 4,
+    backgroundColor: '#141414', // Dark background so card is not solid red
+    boxShadow: '0px 10px 20px rgba(229, 9, 20, 0.85)',
+    elevation: 12, // Android TV shadow depth
   },
   cardInner: {
     width: '100%',

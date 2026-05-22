@@ -27,7 +27,7 @@ export function SideNavigation({ activeTab }: SideNavigationProps) {
   const handleBlur = (id: string) => {
     setTimeout(() => {
       setFocusedItem((curr) => (curr === id ? null : curr));
-    }, 50);
+    }, 150);
   };
 
   return (
@@ -48,7 +48,7 @@ export function SideNavigation({ activeTab }: SideNavigationProps) {
           </Text>
         )}
       </View>
-
+ 
       <View style={styles.menuItems}>
         {navigationItems.map((item) => {
           const isActive = activeTab === item.id;
@@ -122,6 +122,7 @@ const styles = StyleSheet.create({
     paddingLeft: 24, // Consistent padding ensures icons remain in a fixed spot
     transitionProperty: 'width',
     transitionDuration: '150ms',
+    overflow: 'hidden', // Cleanly clip overflow text when collapsed
   },
   containerCollapsed: {
     width: 80,
@@ -159,11 +160,11 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   navItem: {
-    width: '85%', // Fits inside collapsed container padding
+    width: 190, // Fixed width prevents coordinates from shifting during expand/collapse
     height: 48,
     borderRadius: 8,
     justifyContent: 'center',
-    paddingLeft: 4,
+    paddingLeft: 6,
     backgroundColor: 'transparent',
     ...Platform.select({
       web: {

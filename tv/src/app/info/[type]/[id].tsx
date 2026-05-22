@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
@@ -7,6 +7,8 @@ import {
   Pressable, 
   Dimensions, 
   ActivityIndicator,
+  Animated,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -143,6 +145,62 @@ export default function TVInfoScreen() {
     ? { pathname: '/watch/[type]/[id]', params: { type, id, season: selectedSeason.toString(), episode: '1' } }
     : { pathname: '/watch/[type]/[id]', params: { type, id } };
 
+  const SimilarMovieCard = ({ item, onPress }: { item: any; onPress: () => void }) => {
+    const scale = useRef(new Animated.Value(1)).current;
+    const [isFocused, setIsFocused] = useState(false);
+
+    const handleFocus = () => {
+      setIsFocused(true);
+      Animated.timing(scale, {
+        toValue: 1.12,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    const handleBlur = () => {
+      setIsFocused(false);
+      Animated.timing(scale, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    };
+
+    return (
+      <Animated.View 
+        style={[
+          { 
+            transform: [{ scale }], 
+            zIndex: isFocused ? 20 : 1,
+          },
+          Platform.OS === 'android' && {
+            elevation: isFocused ? 20 : 0,
+          }
+        ]}
+      >
+        <Pressable
+          focusable={true}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onPress={onPress}
+          style={({ focused }: any) => [
+            styles.similarCard,
+            focused && styles.similarCardFocused
+          ]}
+        >
+          <View style={styles.similarCardInner}>
+            <Image 
+              source={{ uri: item.poster_path }} 
+              style={styles.similarPoster} 
+              contentFit="cover"
+            />
+          </View>
+        </Pressable>
+      </Animated.View>
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Background Backdrop */}
@@ -165,7 +223,9 @@ export default function TVInfoScreen() {
           focused && styles.backButtonFocused
         ]}
       >
-        <ArrowLeft color="#fff" size={24} />
+        {({ focused }: any) => (
+          <ArrowLeft color={focused ? '#000' : '#fff'} size={24} />
+        )}
       </Pressable>
 
       <View style={styles.contentLayout}>
@@ -216,7 +276,7 @@ export default function TVInfoScreen() {
               {({ focused }: any) => (
                 <>
                   <Play color={focused ? '#fff' : '#000'} size={24} fill={focused ? '#fff' : '#000'} />
-                  <Text style={[styles.playButtonText, focused && styles.buttonTextFocused]}>Play</Text>
+                  <Text style={[styles.playButtonText, focused && { color: '#fff' }]}>Play</Text>
                 </>
               )}
             </Pressable>
@@ -237,7 +297,11 @@ export default function TVInfoScreen() {
                   ) : (
                     <Plus color={focused ? '#000' : '#fff'} size={24} />
                   )}
-                  <Text style={[styles.listButtonText, focused && styles.buttonTextFocused, isBookmarked && !focused && { color: '#e50914' }]}>
+                  <Text style={[
+                    styles.listButtonText,
+                    focused ? { color: '#000' } : { color: '#fff' },
+                    isBookmarked && !focused && { color: '#e50914' }
+                  ]}>
                     {isBookmarked ? 'In Watchlist' : 'My List'}
                   </Text>
                 </>
@@ -386,33 +450,19 @@ export default function TVInfoScreen() {
                     horizontal 
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.similarScroll}
+                    style={{ overflow: 'visible' }}
                   >
                     {media.similar.slice(0, 10).map((similarItem) => (
-                      <Pressable
+                      <SimilarMovieCard
                         key={similarItem.id}
-                        focusable={true}
-                        style={({ focused }: any) => [
-                          styles.similarCard,
-                          focused && styles.similarCardFocused
-                        ]}
+                        item={similarItem}
                         onPress={() => {
                           router.replace({
                             pathname: '/info/[type]/[id]',
                             params: { type: similarItem.type || type, id: similarItem.id.toString() }
                           } as any);
                         }}
-                      >
-                        {({ focused }: any) => (
-                          <View style={styles.similarCardInner}>
-                            <Image 
-                              source={{ uri: similarItem.poster_path }} 
-                              style={styles.similarPoster} 
-                              contentFit="cover"
-                            />
-                            {focused && <View style={styles.similarCardFocusedBorder} />}
-                          </View>
-                        )}
-                      </Pressable>
+                      />
                     ))}
                   </ScrollView>
                 </View>
@@ -747,6 +797,8 @@ const styles = StyleSheet.create({
   },
   similarScroll: {
     gap: 16,
+    paddingHorizontal: 16, // Extra horizontal space so scaled cards are not clipped at boundaries
+    paddingVertical: 12, // Extra vertical padding so scaled cards are not clipped
   },
   similarCard: {
     width: 110,
@@ -754,10 +806,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#141414',
+    borderWidth: 3,
+    borderColor: 'transparent',
   },
   similarCardFocused: {
-    transform: [{ scale: 1.05 }],
     zIndex: 10,
+    borderColor: '#e50914',
+    borderWidth: 3,
+    backgroundColor: '#141414',
+    boxShadow: '0px 6px 15px rgba(229, 9, 20, 0.8)',
+    elevation: 10,
   },
   similarCardInner: {
     width: '100%',
@@ -767,11 +825,5 @@ const styles = StyleSheet.create({
   similarPoster: {
     width: '100%',
     height: '100%',
-  },
-  similarCardFocusedBorder: {
-    ...StyleSheet.absoluteFillObject,
-    borderWidth: 3,
-    borderColor: '#fff',
-    borderRadius: 8,
   },
 });
