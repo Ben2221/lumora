@@ -21,12 +21,13 @@ import {
 } from '@/constants/mockData';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { SideNavigation } from '@/components/SideNavigation';
 import { searchMedia, getHomeLists } from '@/services/tmdb';
 
 const { width } = Dimensions.get('window');
 const availableWidth = width - 80 - 80; // subtracting sidebar (80) and horizontal padding (40 * 2)
-const COLUMN_WIDTH = (availableWidth - 16 * 4) / 5; // 5 columns on TV
+const COLUMN_WIDTH = (availableWidth - 16 * 5) / 6; // 6 columns on TV
+
+const allMedia = [...trendingMovies, ...newReleases, ...mockTVShows];
 
 export default function TVExploreScreen() {
   const theme = useTheme();
@@ -37,8 +38,9 @@ export default function TVExploreScreen() {
   const [popularMedia, setPopularMedia] = useState<MediaItem[]>([]);
   const [isFocused, setIsFocused] = useState(false);
 
-  // Combine database lists to search locally if API fails
-  const allMedia = [...trendingMovies, ...newReleases, ...mockTVShows];
+  const displayedResults = query.trim().length < 2 
+    ? (popularMedia.length > 0 ? popularMedia : allMedia.slice(0, 10))
+    : results;
 
   useEffect(() => {
     let active = true;
@@ -61,7 +63,6 @@ export default function TVExploreScreen() {
   useEffect(() => {
     const trimmed = query.trim();
     if (trimmed.length < 2) {
-      setResults(popularMedia.length > 0 ? popularMedia : allMedia.slice(0, 10));
       return;
     }
 
@@ -87,7 +88,7 @@ export default function TVExploreScreen() {
       active = false;
       clearTimeout(delayDebounce);
     };
-  }, [query, popularMedia]);
+  }, [query]);
 
   const handleMediaPress = (item: MediaItem) => {
     router.push({
@@ -105,7 +106,7 @@ export default function TVExploreScreen() {
       Animated.timing(scale, {
         toValue: 1.12,
         duration: 250,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     };
 
@@ -114,7 +115,7 @@ export default function TVExploreScreen() {
       Animated.timing(scale, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     };
 
@@ -172,10 +173,7 @@ export default function TVExploreScreen() {
       <View style={styles.contentWrapper}>
         {/* Search Header Area */}
         <View style={styles.header}>
-          <Pressable
-            focusable={true}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+          <View
             style={[
               styles.searchBox,
               isFocused && styles.searchBoxFocused
@@ -190,34 +188,39 @@ export default function TVExploreScreen() {
               onChangeText={setQuery}
               autoCapitalize="none"
               returnKeyType="search"
-              // Ensure D-pad select focuses input on platforms that require it
+              autoFocus={true}
               focusable={true}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
             />
             {query.length > 0 && (
               <Pressable 
+                focusable={true}
                 onPress={() => setQuery('')}
                 style={styles.clearButton}
               >
                 <X color="#aaa" size={20} />
               </Pressable>
             )}
-          </Pressable>
+          </View>
         </View>
 
         {/* Results Header Label */}
         <Text style={styles.resultsLabel}>
-          {query.trim().length >= 2 ? `Search Results (${results.length})` : 'Popular Searches'}
+          {query.trim().length >= 2 ? `Search Results (${displayedResults.length})` : 'Popular Searches'}
         </Text>
 
         {/* Search Grid */}
         <FlatList
-          data={results}
+          data={displayedResults}
           renderItem={renderItem}
           keyExtractor={(item: any) => item.id.toString() + '-' + item.type}
-          numColumns={5}
+          numColumns={6}
           contentContainerStyle={styles.gridContent}
           columnWrapperStyle={styles.gridRow}
           showsVerticalScrollIndicator={false}
+          style={styles.gridList}
+          focusable={false}
         />
       </View>
     </View>
@@ -232,7 +235,7 @@ const styles = StyleSheet.create({
   contentWrapper: {
     flex: 1,
     marginLeft: 80, // Collapsed SideNavigation width
-    paddingHorizontal: 40,
+    paddingHorizontal: 24,
     paddingTop: 30,
     backgroundColor: '#000',
   },
@@ -274,6 +277,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Outfit-Bold',
   },
   gridContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 60,
   },
   gridRow: {
@@ -296,8 +301,14 @@ const styles = StyleSheet.create({
     borderColor: '#e50914',
     borderWidth: 4,
     backgroundColor: '#141414', // Dark background so card is not solid red
-    boxShadow: '0px 10px 20px rgba(229, 9, 20, 0.85)',
+    shadowColor: '#e50914',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
     elevation: 12, // Android TV shadow depth
+  },
+  gridList: {
+    flex: 1,
   },
   cardInner: {
     width: '100%',

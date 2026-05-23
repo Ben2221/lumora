@@ -41,7 +41,7 @@ export default function TVMyListScreen() {
       Animated.timing(scale, {
         toValue: 1.12,
         duration: 250,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     };
 
@@ -50,7 +50,7 @@ export default function TVMyListScreen() {
       Animated.timing(scale, {
         toValue: 1,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     };
 
@@ -140,6 +140,8 @@ export default function TVMyListScreen() {
             contentContainerStyle={styles.listContainer}
             columnWrapperStyle={styles.row}
             showsVerticalScrollIndicator={false}
+            style={styles.gridList}
+            focusable={false}
           />
         )}
       </View>
@@ -193,8 +195,14 @@ const styles = StyleSheet.create({
     borderColor: '#e50914',
     borderWidth: 4,
     backgroundColor: '#141414', // Dark background so card is not solid red
-    boxShadow: '0px 10px 20px rgba(229, 9, 20, 0.85)',
+    shadowColor: '#e50914',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
     elevation: 12, // Android TV shadow depth
+  },
+  gridList: {
+    flex: 1,
   },
   cardInner: {
     width: '100%',

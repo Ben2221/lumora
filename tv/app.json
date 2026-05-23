@@ -2,7 +2,7 @@
   "expo": {
     "name": "Lumora TV",
     "slug": "lumora-tv",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "landscape",
     "icon": "./assets/images/icon.png",
     "scheme": "lumora-tv",
@@ -17,7 +17,8 @@
         "foregroundImage": "./assets/images/icon.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.savvy2221.lumoratv"
+      "package": "com.savvy2221.lumoratv",
+      "versionCode": 2
     },
     "web": {
       "output": "static",
@@ -42,7 +43,6 @@
         }
       ],
       "expo-font",
-      "expo-web-browser",
       [
         "expo-build-properties",
         {
@@ -64,7 +64,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "eafacaa0-f1c2-49e5-816d-77491624f6d5"
+        "projectId": "696f9dfe-f29d-4908-9d39-e7875012c58d"
       }
     }
   }

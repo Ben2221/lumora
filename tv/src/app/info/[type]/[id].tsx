@@ -329,6 +329,7 @@ export default function TVInfoScreen() {
                   horizontal 
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.seasonsPillScroll}
+                  focusable={false}
                 >
                   {media.seasons.map((season) => {
                     const isSelected = selectedSeason === season.season_number;
@@ -362,6 +363,8 @@ export default function TVInfoScreen() {
               <ScrollView 
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.episodesScrollContainer}
+                style={{ flex: 1 }}
+                focusable={false}
               >
                 {episodesLoading ? (
                   <ActivityIndicator size="small" color="#e50914" style={{ marginTop: 20 }} />
@@ -417,7 +420,12 @@ export default function TVInfoScreen() {
             </View>
           ) : (
             // Movie section: Cast + Similar movies
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.movieDetailsScroll}>
+            <ScrollView 
+              showsVerticalScrollIndicator={false} 
+              contentContainerStyle={styles.movieDetailsScroll}
+              style={{ flex: 1 }}
+              focusable={false}
+            >
               {media.cast && media.cast.length > 0 && (
                 <View style={styles.sectionContainer}>
                   <Text style={styles.sectionTitle}>Cast & Crew</Text>
@@ -425,6 +433,7 @@ export default function TVInfoScreen() {
                     horizontal 
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.castScroll}
+                    focusable={false}
                   >
                     {media.cast.slice(0, 10).map((actor, idx) => (
                       <View key={idx} style={styles.castCard}>
@@ -451,6 +460,7 @@ export default function TVInfoScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.similarScroll}
                     style={{ overflow: 'visible' }}
+                    focusable={false}
                   >
                     {media.similar.slice(0, 10).map((similarItem) => (
                       <SimilarMovieCard
@@ -814,7 +824,10 @@ const styles = StyleSheet.create({
     borderColor: '#e50914',
     borderWidth: 3,
     backgroundColor: '#141414',
-    boxShadow: '0px 6px 15px rgba(229, 9, 20, 0.8)',
+    shadowColor: '#e50914',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.5,
+    shadowRadius: 15,
     elevation: 10,
   },
   similarCardInner: {

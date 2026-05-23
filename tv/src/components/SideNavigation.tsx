@@ -36,6 +36,11 @@ export function SideNavigation({ activeTab }: SideNavigationProps) {
         styles.container, 
         isExpanded ? styles.containerExpanded : styles.containerCollapsed
       ]}
+      testID="sidebar-container"
+      {...Platform.select({
+        web: { dataSet: { 'sidebar-container': 'true' } } as any,
+        default: {},
+      })}
     >
       <View style={styles.header}>
         <Image 
@@ -58,16 +63,22 @@ export function SideNavigation({ activeTab }: SideNavigationProps) {
             <Pressable
               key={item.id}
               focusable={true}
+              testID="sidebar-item"
+              {...Platform.select({
+                web: { dataSet: { 'sidebar-item': 'true' } } as any,
+                default: {},
+              })}
+              style={({ focused }: any) => [
+                styles.navItem,
+                !isExpanded && styles.navItemCollapsed,
+                isActive && styles.navItemActive,
+                focused && styles.navItemFocused,
+              ]}
               onPress={() => {
                 router.replace(item.path as any);
               }}
               onFocus={() => handleFocus(item.id)}
               onBlur={() => handleBlur(item.id)}
-              style={({ focused }: any) => [
-                styles.navItem,
-                isActive && styles.navItemActive,
-                focused && styles.navItemFocused,
-              ]}
             >
               {({ focused }: any) => (
                 <View style={styles.navItemContent}>
@@ -171,6 +182,9 @@ const styles = StyleSheet.create({
         cursor: 'pointer',
       } as any,
     }),
+  },
+  navItemCollapsed: {
+    width: 36,
   },
   navItemActive: {
     backgroundColor: 'rgba(229, 9, 20, 0.08)',
