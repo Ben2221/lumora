@@ -137,6 +137,9 @@ export default function TVMyListScreen() {
             renderItem={renderItem}
             keyExtractor={(item: any) => item.id.toString() + '-' + item.type}
             numColumns={5}
+            removeClippedSubviews={false}
+            initialNumToRender={10}
+            windowSize={11}
             contentContainerStyle={styles.listContainer}
             columnWrapperStyle={styles.row}
             showsVerticalScrollIndicator={false}

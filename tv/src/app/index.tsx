@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -90,6 +90,33 @@ const MovieCard = ({ item, onFocus, onPress }: { item: MediaItem; onFocus: () =>
     </Animated.View>
   );
 };
+
+const MediaRow = React.memo(({ title, data, onMediaPress }: { title: string; data: MediaItem[]; onMediaPress: (item: MediaItem) => void }) => {
+  return (
+    <View style={styles.rowContainer}>
+      <Text style={styles.rowTitle}>{title}</Text>
+      <FlatList
+        horizontal
+        data={data}
+        removeClippedSubviews={false}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={11}
+        keyExtractor={(item) => item.id.toString() + '-' + item.type}
+        renderItem={({ item }) => (
+          <MovieCard
+            item={item}
+            onFocus={() => {}}
+            onPress={() => onMediaPress(item)}
+          />
+        )}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.rowScroll}
+        focusable={false}
+      />
+    </View>
+  );
+});
 
 export default function TVHomeScreen() {
   const theme = useTheme();
@@ -202,12 +229,12 @@ export default function TVHomeScreen() {
     };
   }, []);
 
-  const handleMediaPress = (item: MediaItem) => {
+  const handleMediaPress = useCallback((item: MediaItem) => {
     router.push({
       pathname: '/info/[type]/[id]',
       params: { type: item.type, id: item.id.toString() }
     });
-  };
+  }, [router]);
 
   const handleFilterChange = (filter: 'all' | 'tv' | 'movie' | 'popular') => {
     setActiveFilter(filter);
@@ -249,28 +276,13 @@ export default function TVHomeScreen() {
     { title: "Award Winning", data: getFilteredData(lists.oscar) },
   ].filter(row => row.data && row.data.length > 0);
 
-  const renderMediaRow = (title: string, data: MediaItem[]) => {
-    return (
-      <View style={styles.rowContainer}>
-        <Text style={styles.rowTitle}>{title}</Text>
-        <FlatList
-          horizontal
-          data={data}
-          keyExtractor={(item) => item.id.toString() + '-' + item.type}
-          renderItem={({ item }) => (
-            <MovieCard
-              item={item}
-              onFocus={() => {}}
-              onPress={() => handleMediaPress(item)}
-            />
-          )}
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.rowScroll}
-          focusable={false}
-        />
-      </View>
-    );
-  };
+  const renderItem = useCallback(({ item }: { item: { title: string; data: MediaItem[] } }) => (
+    <MediaRow
+      title={item.title}
+      data={item.data}
+      onMediaPress={handleMediaPress}
+    />
+  ), [handleMediaPress]);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -278,7 +290,10 @@ export default function TVHomeScreen() {
       <View style={styles.contentWrapper}>
         <FlatList
           data={rows}
-          renderItem={({ item }) => renderMediaRow(item.title, item.data)}
+          renderItem={renderItem}
+          removeClippedSubviews={false}
+          initialNumToRender={5}
+          windowSize={11}
           keyExtractor={(item) => item.title}
           ListHeaderComponent={
             <View style={styles.headerWrapper}>

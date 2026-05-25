@@ -216,6 +216,9 @@ export default function TVExploreScreen() {
           renderItem={renderItem}
           keyExtractor={(item: any) => item.id.toString() + '-' + item.type}
           numColumns={6}
+          removeClippedSubviews={false}
+          initialNumToRender={12}
+          windowSize={11}
           contentContainerStyle={styles.gridContent}
           columnWrapperStyle={styles.gridRow}
           showsVerticalScrollIndicator={false}
