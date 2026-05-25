@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, Pressable, Text, Platform, ActivityIndicator, Dimensions } from 'react-native';
+import { View, StyleSheet, Text, Platform, ActivityIndicator, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { TVPressable } from '@/components/TVPressable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { ArrowLeft, Play } from 'lucide-react-native';
@@ -32,8 +33,9 @@ export default function TVWatchScreen() {
   const [isPaused, setIsPaused] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showControls, setShowControls] = useState(true);
+  const [pointerModeEnabled, setPointerModeEnabled] = useState(false);
 
-  // Lock orientation to Landscape when playing video, lock back on unmount
+  // Lock orientation to Landscape when playing video
   useEffect(() => {
     const lockLandscape = async () => {
       try {
@@ -43,16 +45,6 @@ export default function TVWatchScreen() {
       }
     };
     lockLandscape();
-    return () => {
-      const lockPortrait = async () => {
-        try {
-          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
-        } catch (e) {
-          console.warn('Failed to lock screen orientation back to portrait:', e);
-        }
-      };
-      lockPortrait();
-    };
   }, []);
 
   // Auto-hide controls after 4 seconds of inactivity if playing
@@ -129,6 +121,21 @@ export default function TVWatchScreen() {
       active = false;
     };
   }, [id, type]);
+
+  // Sync pointer mode state with the webview whenever it changes
+  useEffect(() => {
+    if (webviewRef.current) {
+      const cmd = `
+        try {
+          if (typeof window.setCursorMode === 'function') {
+            window.setCursorMode(${pointerModeEnabled});
+          }
+        } catch(e) {}
+        true;
+      `;
+      webviewRef.current.injectJavaScript(cmd);
+    }
+  }, [pointerModeEnabled]);
 
   const handlePlayClick = () => {
     setIsPaused(false);
@@ -217,6 +224,40 @@ export default function TVWatchScreen() {
 
   const injectedJS = `
     (function() {
+      // Set global pointer mode variables
+      window.isCursorMode = false;
+      window.setCursorMode = function(enabled) {
+        window.isCursorMode = enabled;
+        var cursorEl = document.getElementById('lumora-virtual-cursor');
+        if (cursorEl) {
+          cursorEl.style.display = enabled ? 'block' : 'none';
+        }
+      };
+
+      // Create virtual cursor element
+      var cursor = document.createElement('div');
+      cursor.id = 'lumora-virtual-cursor';
+      cursor.style.position = 'fixed';
+      cursor.style.width = '24px';
+      cursor.style.height = '24px';
+      cursor.style.borderRadius = '50%';
+      cursor.style.backgroundColor = 'rgba(229, 9, 20, 0.9)'; // Lumora Red
+      cursor.style.border = '2px solid white';
+      cursor.style.zIndex = '9999999';
+      cursor.style.pointerEvents = 'none';
+      cursor.style.boxShadow = '0 0 12px rgba(0,0,0,0.8)';
+      cursor.style.display = 'none';
+      document.body.appendChild(cursor);
+
+      var cursorX = window.innerWidth / 2;
+      var cursorY = window.innerHeight / 2;
+
+      function updateCursorPosition() {
+        cursor.style.left = cursorX + 'px';
+        cursor.style.top = cursorY + 'px';
+      }
+      updateCursorPosition();
+
       var meta = document.querySelector('meta[name="viewport"]');
       if (!meta) {
         meta = document.createElement('meta');
@@ -249,6 +290,66 @@ export default function TVWatchScreen() {
         if (keyCode === 32 || keyCode === 13 || keyCode === 23) {
           e.preventDefault();
         }
+
+        if (window.isCursorMode) {
+          var step = 24; // step size in pixels
+          if (keyCode === 37) { // Left
+            cursorX = Math.max(10, cursorX - step);
+            updateCursorPosition();
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          } else if (keyCode === 39) { // Right
+            cursorX = Math.min(window.innerWidth - 10, cursorX + step);
+            updateCursorPosition();
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          } else if (keyCode === 38) { // Up
+            cursorY = Math.max(10, cursorY - step);
+            updateCursorPosition();
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          } else if (keyCode === 40) { // Down
+            cursorY = Math.min(window.innerHeight - 10, cursorY + step);
+            updateCursorPosition();
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          } else if (keyCode === 13 || keyCode === 23 || keyCode === 32) { // Click/Select
+            var el = document.elementFromPoint(cursorX, cursorY);
+            if (el) {
+              var mousedown = new MouseEvent('mousedown', {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                clientX: cursorX,
+                clientY: cursorY
+              });
+              var click = new MouseEvent('click', {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                clientX: cursorX,
+                clientY: cursorY
+              });
+              var mouseup = new MouseEvent('mouseup', {
+                view: window,
+                bubbles: true,
+                cancelable: true,
+                clientX: cursorX,
+                clientY: cursorY
+              });
+              el.dispatchEvent(mousedown);
+              el.dispatchEvent(click);
+              el.dispatchEvent(mouseup);
+            }
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+          }
+        }
         
         try {
           window.ReactNativeWebView.postMessage(JSON.stringify({
@@ -257,7 +358,7 @@ export default function TVWatchScreen() {
             keyCode: keyCode
           }));
         } catch(err) {}
-      });
+      }, true); // Capture phase listener to intercept before web player shortcuts
 
       window.addEventListener('message', function(event) {
         if (event.origin.includes('vidking.net') || event.origin.includes('vidking')) {
@@ -279,27 +380,6 @@ export default function TVWatchScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: '#000' }]}>
-      {/* Floating Back Header Panel */}
-      {showControls && (
-        <View style={[styles.headerOverlay, { paddingTop: Math.max(safeAreaInsets.top, Spacing.three) }]}>
-          <Pressable
-            focusable={true}
-            onPress={() => router.back()}
-            style={({ focused }: any) => [
-              styles.backButton,
-              focused && styles.backButtonFocused
-            ]}
-          >
-            {({ focused }: any) => (
-              <>
-                <ArrowLeft color={focused ? '#000' : '#fff'} size={20} />
-                <Text style={[styles.backText, focused && styles.backTextFocused]}>Back</Text>
-              </>
-            )}
-          </Pressable>
-        </View>
-      )}
-
       {Platform.OS === 'web' ? (
         React.createElement('iframe', {
           src: playerUrl,
@@ -318,6 +398,7 @@ export default function TVWatchScreen() {
           ref={webviewRef}
           source={{ uri: playerUrl }}
           style={styles.webview}
+          focusable={true}
           allowsFullscreenVideo={true}
           allowsInlineMediaPlayback={true}
           mediaPlaybackRequiresUserAction={false}
@@ -329,7 +410,20 @@ export default function TVWatchScreen() {
           renderLoading={renderLoading}
           injectedJavaScript={injectedJS}
           onMessage={onMessage}
-          onLoadEnd={() => setIsLoading(false)}
+          onLoadEnd={() => {
+            setIsLoading(false);
+            if (webviewRef.current) {
+              const cmd = `
+                try {
+                  if (typeof window.setCursorMode === 'function') {
+                    window.setCursorMode(${pointerModeEnabled});
+                  }
+                } catch(e) {}
+                true;
+              `;
+              webviewRef.current.injectJavaScript(cmd);
+            }
+          }}
           nestedScrollEnabled={true}
           allowsBackForwardNavigationGestures={false}
           overScrollMode="never"
@@ -342,55 +436,115 @@ export default function TVWatchScreen() {
         />
       )}
 
-      {/* Pause Overlay (D-pad Focusable) */}
-      {isPaused && !isLoading && (
-        <View style={styles.pauseOverlay}>
-          {media?.backdrop_path ? (
-            <Image 
-              source={{ uri: media.backdrop_path }} 
-              style={styles.pauseBackdrop}
-              contentFit="cover"
-            />
-          ) : null}
-          
-          <View style={styles.pauseGradient} />
+      {/* Unified Overlay Container for Sibling Focus Navigation */}
+      {(showControls || (isPaused && !isLoading)) && (
+        <View style={styles.overlayContainer} pointerEvents="box-none">
+          {/* Pause Overlay (D-pad Focusable) */}
+          {isPaused && !isLoading && (
+            <View style={styles.pauseOverlay}>
+              {media?.backdrop_path ? (
+                <Image 
+                  source={{ uri: media.backdrop_path }} 
+                  style={styles.pauseBackdrop}
+                  contentFit="cover"
+                />
+              ) : null}
+              
+              <View style={styles.pauseGradient} />
 
-          <View style={styles.pauseContent}>
-            <Pressable 
-              focusable={true}
-              onPress={handlePlayClick}
-              style={({ focused }: any) => [
-                styles.resumeBtn,
-                focused && styles.resumeBtnFocused
-              ]}
-            >
-              {({ focused }: any) => (
-                <>
-                  <Play color={focused ? '#fff' : '#000'} size={24} fill={focused ? '#fff' : '#000'} />
-                  <Text style={[styles.resumeBtnText, focused && styles.resumeBtnTextFocused]}>Resume Playback</Text>
-                </>
-              )}
-            </Pressable>
+              <View style={styles.pauseContent}>
+                <TVPressable
+                  onPress={handlePlayClick}
+                  style={({ focused }: any) => [
+                    styles.resumeBtn,
+                    focused && styles.resumeBtnFocused
+                  ]}
+                >
+                  {({ focused }: any) => (
+                    <>
+                      <Play color={focused ? '#fff' : '#000'} size={24} fill={focused ? '#fff' : '#000'} />
+                      <Text style={[styles.resumeBtnText, focused && styles.resumeBtnTextFocused]}>Resume Playback</Text>
+                    </>
+                  )}
+                </TVPressable>
 
-            <View style={styles.pauseMeta}>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>Paused</Text>
+                <View style={styles.pauseMeta}>
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>Paused</Text>
+                  </View>
+                  <Text style={styles.pauseTitle}>
+                    {type === 'tv' && season && episode ? `S${season}:E${episode} - ${media?.title}` : media?.title}
+                  </Text>
+                  <Text style={styles.pauseOverview}>
+                    {media?.overview || 'Enjoy your viewing session. Lumora automatically manages English subtitles.'}
+                  </Text>
+                </View>
+
+                <View style={styles.pauseSubFooter}>
+                  <View style={styles.subBadge}>
+                    <Text style={styles.subBadgeText}>Auto-Subtitles: English</Text>
+                  </View>
+                  <Text style={styles.tapText}>Select "Resume Playback" to continue</Text>
+                </View>
+
+                <View style={styles.pointerInstructionBox}>
+                  <Text style={styles.pointerInstructionText}>
+                    🎮 Cannot access player menus? Turn on "D-pad Pointer" in the top bar to move a virtual cursor with your remote control.
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.pauseTitle}>
-                {type === 'tv' && season && episode ? `S${season}:E${episode} - ${media?.title}` : media?.title}
-              </Text>
-              <Text style={styles.pauseOverview}>
-                {media?.overview || 'Enjoy your viewing session. Lumora automatically manages English subtitles.'}
-              </Text>
             </View>
+          )}
 
-            <View style={styles.pauseSubFooter}>
-              <View style={styles.subBadge}>
-                <Text style={styles.subBadgeText}>Auto-Subtitles: English</Text>
+          {/* Floating Back Header Panel (on top of pause overlay for focus access) */}
+          {showControls && (
+            <View style={[styles.headerOverlay, { paddingTop: Math.max(safeAreaInsets.top, Spacing.three) }]}>
+              <TVPressable
+                onPress={() => router.back()}
+                style={({ focused }: any) => [
+                  styles.backButton,
+                  focused && styles.backButtonFocused
+                ]}
+              >
+                {({ focused }: any) => (
+                  <>
+                    <ArrowLeft color={focused ? '#000' : '#fff'} size={20} />
+                    <Text style={[styles.backText, focused && styles.backTextFocused]}>Back</Text>
+                  </>
+                )}
+              </TVPressable>
+
+              {/* Toggle Pointer Mode Button */}
+              <TVPressable
+                onPress={() => setPointerModeEnabled(prev => !prev)}
+                style={({ focused }: any) => [
+                  styles.controlToggleBtn,
+                  pointerModeEnabled && styles.controlToggleBtnActive,
+                  focused && styles.controlToggleBtnFocused
+                ]}
+              >
+                {({ focused }: any) => (
+                  <Text style={[
+                    styles.controlToggleText,
+                    pointerModeEnabled && styles.controlToggleTextActive,
+                    focused && { color: '#000' }
+                  ]}>
+                    {pointerModeEnabled ? '🎮 D-pad Pointer: ON' : '🎮 D-pad Pointer: OFF'}
+                  </Text>
+                )}
+              </TVPressable>
+
+              {/* Pointer Instructions Hint */}
+              <View style={styles.pointerHintContainer}>
+                <Text style={styles.pointerHintText}>
+                  {pointerModeEnabled 
+                    ? "💡 D-pad: Move Cursor  |  Enter: Select  |  Back: Hide controls" 
+                    : "💡 Turn ON to select Quality, Audio, & Subtitles via virtual cursor"
+                  }
+                </Text>
               </View>
-              <Text style={styles.tapText}>Select "Resume Playback" to continue</Text>
             </View>
-          </View>
+          )}
         </View>
       )}
     </View>
@@ -401,20 +555,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  overlayContainer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 100,
+  },
   webview: {
     flex: 1,
     backgroundColor: '#000',
   },
   headerOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    paddingHorizontal: 40,
+    paddingLeft: 54,
+    paddingRight: 54,
     paddingBottom: Spacing.three,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'transparent',
     zIndex: 100,
   },
   backButton: {
@@ -441,6 +596,32 @@ const styles = StyleSheet.create({
   backTextFocused: {
     color: '#000',
   },
+  controlToggleBtn: {
+    marginLeft: 20,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  controlToggleBtnActive: {
+    borderColor: '#e50914',
+    backgroundColor: 'rgba(229, 9, 20, 0.15)',
+  },
+  controlToggleBtnFocused: {
+    backgroundColor: '#fff',
+    borderColor: '#fff',
+    transform: [{ scale: 1.05 }],
+  },
+  controlToggleText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  controlToggleTextActive: {
+    color: '#e50914',
+  },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#000',
@@ -454,7 +635,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   pauseOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     zIndex: 40,
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.7)',
@@ -471,6 +652,7 @@ const styles = StyleSheet.create({
   },
   pauseContent: {
     paddingHorizontal: 60,
+    paddingTop: 20, // Reduced since parent container starts at Y=120
     alignItems: 'flex-start',
     gap: Spacing.five,
   },
@@ -547,6 +729,36 @@ const styles = StyleSheet.create({
   tapText: {
     color: '#888',
     fontSize: 12,
+    fontWeight: '500',
+  },
+  pointerHintContainer: {
+    marginLeft: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  pointerHintText: {
+    color: '#ffcc00',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  pointerInstructionBox: {
+    marginTop: Spacing.two,
+    backgroundColor: 'rgba(229, 9, 20, 0.1)',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(229, 9, 20, 0.3)',
+    maxWidth: '85%',
+  },
+  pointerInstructionText: {
+    color: '#eee',
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: '500',
   },
 });

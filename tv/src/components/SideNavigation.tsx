@@ -33,7 +33,7 @@ export function SideNavigation({ activeTab }: SideNavigationProps) {
   return (
     <View 
       style={[
-        styles.container, 
+        styles.container,
         isExpanded ? styles.containerExpanded : styles.containerCollapsed
       ]}
       testID="sidebar-container"
@@ -59,6 +59,8 @@ export function SideNavigation({ activeTab }: SideNavigationProps) {
           const isActive = activeTab === item.id;
           const Icon = item.icon;
 
+          const isItemFocused = focusedItem === item.id;
+
           return (
             <Pressable
               key={item.id}
@@ -68,39 +70,37 @@ export function SideNavigation({ activeTab }: SideNavigationProps) {
                 web: { dataSet: { 'sidebar-item': 'true' } } as any,
                 default: {},
               })}
-              style={({ focused }: any) => [
-                styles.navItem,
-                !isExpanded && styles.navItemCollapsed,
-                isActive && styles.navItemActive,
-                focused && styles.navItemFocused,
-              ]}
+            style={[styles.navItem, { width: isExpanded ? 190 : 60 }]}
               onPress={() => {
                 router.replace(item.path as any);
               }}
               onFocus={() => handleFocus(item.id)}
               onBlur={() => handleBlur(item.id)}
             >
-              {({ focused }: any) => (
-                <View style={styles.navItemContent}>
-                  <Icon 
-                    color={focused ? '#000' : (isActive ? '#e50914' : '#aaa')} 
-                    size={24} 
-                    strokeWidth={focused || isActive ? 2.5 : 2}
-                  />
-                  {isExpanded && (
-                    <Text 
-                      style={[
-                        styles.navLabel, 
-                        isActive && styles.navLabelActive,
-                        focused && styles.navLabelFocused
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {item.label}
-                    </Text>
-                  )}
-                </View>
-              )}
+              <View style={[
+                styles.navItemContent,
+                isActive && styles.navItemActive,
+                isItemFocused && styles.navItemFocused,
+                { width: '100%' }
+              ]}>
+                <Icon 
+                  color={isItemFocused ? '#000' : (isActive ? '#e50914' : '#aaa')} 
+                  size={24} 
+                  strokeWidth={isItemFocused || isActive ? 2.5 : 2}
+                />
+                {isExpanded && (
+                  <Text 
+                    style={[
+                      styles.navLabel, 
+                      isActive && styles.navLabelActive,
+                      isItemFocused && styles.navLabelFocused
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {item.label}
+                  </Text>
+                )}
+              </View>
             </Pressable>
           );
         })}
@@ -128,18 +128,16 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: '#141414',
     zIndex: 1000,
-    paddingVertical: 30,
+    elevation: 25, // Ensure Android TV focus engine treats it as floating on top
+    paddingVertical: 54, // Safe TV top/bottom margin (5% of 1080px)
     alignItems: 'flex-start',
-    paddingLeft: 24, // Consistent padding ensures icons remain in a fixed spot
-    transitionProperty: 'width',
-    transitionDuration: '150ms',
-    overflow: 'hidden', // Cleanly clip overflow text when collapsed
+    paddingLeft: 48, // Safe TV left margin (approx. 5% of 1920px)
   },
   containerCollapsed: {
-    width: 80,
+    width: 108, // Increased from 80 to fit the extra padding and keep spacing
   },
   containerExpanded: {
-    width: 240,
+    width: 268, // Increased from 240 to match
     shadowColor: '#000',
     shadowOffset: { width: 10, height: 0 },
     shadowOpacity: 0.8,
@@ -171,20 +169,17 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   navItem: {
-    width: 190, // Fixed width prevents coordinates from shifting during expand/collapse
+    width: 60, // Expanded collapsed size to eliminate layout gap for focus engine
     height: 48,
     borderRadius: 8,
     justifyContent: 'center',
-    paddingLeft: 6,
     backgroundColor: 'transparent',
+    overflow: 'visible', // Allow expanded inner view to draw text & long white focused background
     ...Platform.select({
       web: {
         cursor: 'pointer',
       } as any,
     }),
-  },
-  navItemCollapsed: {
-    width: 36,
   },
   navItemActive: {
     backgroundColor: 'rgba(229, 9, 20, 0.08)',
@@ -195,7 +190,11 @@ const styles = StyleSheet.create({
   navItemContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    height: 48,
+    borderRadius: 8,
+    paddingLeft: 6,
     gap: 16,
+    overflow: 'hidden', // Clips label gracefully during collapsed state
   },
   navLabel: {
     color: '#aaa',

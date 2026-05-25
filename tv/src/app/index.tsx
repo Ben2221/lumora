@@ -4,14 +4,15 @@ import {
   Text,
   StyleSheet,
   Pressable,
-  Dimensions,
   Animated,
   Platform,
   FlatList,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Play, Plus, Check, Info } from 'lucide-react-native';
+import { TVPressable } from '@/components/TVPressable';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   trendingMovies,
@@ -27,7 +28,7 @@ import { getHomeLists } from '@/services/tmdb';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-const { height } = Dimensions.get('window');
+
 
 const MovieCard = ({ item, onFocus, onPress }: { item: MediaItem; onFocus: () => void; onPress: () => void }) => {
   const scale = useMemo(() => new Animated.Value(1), []);
@@ -53,40 +54,47 @@ const MovieCard = ({ item, onFocus, onPress }: { item: MediaItem; onFocus: () =>
   };
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
-        { 
-          transform: [{ scale }], 
+        {
+          transform: [{ scale }],
           zIndex: isFocused ? 20 : 1,
+          width: 140,
+          height: 210,
         },
         Platform.OS === 'android' && {
           elevation: isFocused ? 20 : 0,
         }
       ]}
     >
-      <Pressable
-        focusable={true}
+      <TVPressable
         onFocus={handleFocus}
         onBlur={handleBlur}
         onPress={onPress}
         style={({ focused }: any) => [
           styles.cardContainer,
+          { width: '100%', height: '100%', margin: 0 },
           focused && styles.cardContainerFocused
         ]}
       >
-        <View style={styles.cardInner}>
-          <Image
-            source={{ uri: item.poster_path }}
-            style={styles.cardImage}
-            contentFit="cover"
-          />
-          {item.type === 'tv' && (
-            <View style={styles.cardBadge}>
-              <Text style={styles.cardBadgeText}>SERIES</Text>
-            </View>
-          )}
-        </View>
-      </Pressable>
+        {({ focused }: any) => (
+          <View style={styles.cardInner}>
+            <Image
+              source={{ uri: item.poster_path }}
+              style={styles.cardImage}
+              contentFit="cover"
+            />
+            {item.type === 'tv' && (
+              <View style={styles.cardBadge}>
+                <Text style={styles.cardBadgeText}>SERIES</Text>
+              </View>
+            )}
+            {focused && (
+              <View style={styles.cardFocusedBorder} />
+            )}
+          </View>
+        )}
+      </TVPressable>
     </Animated.View>
   );
 };
@@ -106,19 +114,19 @@ const MediaRow = React.memo(({ title, data, onMediaPress }: { title: string; dat
         renderItem={({ item }) => (
           <MovieCard
             item={item}
-            onFocus={() => {}}
+            onFocus={() => { }}
             onPress={() => onMediaPress(item)}
           />
         )}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.rowScroll}
-        focusable={false}
       />
     </View>
   );
 });
 
 export default function TVHomeScreen() {
+  const { height } = useWindowDimensions();
   const theme = useTheme();
   const router = useRouter();
   const { addToWatchlist, removeFromWatchlist, isInWatchlist } = useWatchlist();
@@ -297,79 +305,9 @@ export default function TVHomeScreen() {
           keyExtractor={(item) => item.title}
           ListHeaderComponent={
             <View style={styles.headerWrapper}>
-              {/* Netflix-Style Top Navigation Bar (Logo and Sub-Navigation Tabs) */}
-              <View style={styles.topNavBar}>
-                <Text style={styles.topBarLogoText}>LUMORA</Text>
-                <View style={styles.topNavLinks}>
-                  <Pressable
-                    focusable={true}
-                    style={({ focused }: any) => [
-                      styles.topNavLink,
-                      focused && styles.topNavLinkFocused,
-                      activeFilter === 'all' && styles.topNavLinkActive
-                    ]}
-                    onPress={() => handleFilterChange('all')}
-                  >
-                    {({ focused }: any) => (
-                      <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
-                        Home
-                      </Text>
-                    )}
-                  </Pressable>
-                  
-                  <Pressable
-                    focusable={true}
-                    style={({ focused }: any) => [
-                      styles.topNavLink,
-                      focused && styles.topNavLinkFocused,
-                      activeFilter === 'tv' && styles.topNavLinkActive
-                    ]}
-                    onPress={() => handleFilterChange('tv')}
-                  >
-                    {({ focused }: any) => (
-                      <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
-                        TV Shows
-                      </Text>
-                    )}
-                  </Pressable>
-
-                  <Pressable
-                    focusable={true}
-                    style={({ focused }: any) => [
-                      styles.topNavLink,
-                      focused && styles.topNavLinkFocused,
-                      activeFilter === 'movie' && styles.topNavLinkActive
-                    ]}
-                    onPress={() => handleFilterChange('movie')}
-                  >
-                    {({ focused }: any) => (
-                      <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
-                        Movies
-                      </Text>
-                    )}
-                  </Pressable>
-
-                  <Pressable
-                    focusable={true}
-                    style={({ focused }: any) => [
-                      styles.topNavLink,
-                      focused && styles.topNavLinkFocused,
-                      activeFilter === 'popular' && styles.topNavLinkActive
-                    ]}
-                    onPress={() => handleFilterChange('popular')}
-                  >
-                    {({ focused }: any) => (
-                      <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
-                        New & Popular
-                      </Text>
-                    )}
-                  </Pressable>
-                </View>
-              </View>
-
               {/* Dynamic Hero Section */}
-              <View style={styles.heroSection}>
-                <Animated.View style={[styles.heroBackdrop, { opacity: heroOpacity }]}>
+              <View style={[styles.heroSection, { height: height * 0.68 }]}>
+                <Animated.View style={[styles.heroBackdrop, { opacity: heroOpacity }]} pointerEvents="none">
                   <Image
                     source={{ uri: visibleHeroItem.backdrop_path }}
                     style={{ width: '100%', height: '100%' }}
@@ -380,113 +318,188 @@ export default function TVHomeScreen() {
                 <LinearGradient
                   colors={['transparent', 'rgba(0,0,0,0.95)']}
                   style={styles.heroGradientVertical}
+                  pointerEvents="none"
                 />
                 <LinearGradient
                   colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.2)', 'transparent']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.heroGradientHorizontal}
+                  pointerEvents="none"
                 />
 
-                <View style={styles.heroInfoContainer}>
-                  <Animated.View style={{ opacity: heroOpacity }}>
-                    <Text style={styles.heroTitle} numberOfLines={2}>
-                      {visibleHeroItem.title}
-                    </Text>
-
-                    <View style={styles.heroMetaRow}>
-                      <Text style={styles.heroMetaMatch}>
-                        {visibleHeroItem.vote_average ? `${(visibleHeroItem.vote_average * 10).toFixed(0)}% Match` : '98% Match'}
-                      </Text>
-                      <Text style={styles.heroMetaText}>
-                        {visibleHeroItem.release_date ? visibleHeroItem.release_date.slice(0, 4) : '2024'}
-                      </Text>
-                      <Text style={styles.heroMetaBadge}>
-                        {visibleHeroItem.type === 'tv' ? 'TV-MA' : 'PG-13'}
-                      </Text>
-                      <Text style={styles.heroMetaText}>
-                        {visibleHeroItem.type === 'tv' ? 'Series' : 'Movie'}
-                      </Text>
+                {/* Content Container in normal layout flow */}
+                <View style={styles.heroContentContainer}>
+                  {/* Netflix-Style Top Navigation Bar (Logo and Sub-Navigation Tabs) */}
+                  <View style={styles.topNavBar}>
+                    <View style={styles.topBarLogoContainer}>
+                      <Image
+                        source={require('@/assets/images/favicon.png')}
+                        style={styles.topBarLogoIcon}
+                        contentFit="contain"
+                      />
+                      <Text style={styles.topBarLogoText}>LUMORA</Text>
                     </View>
-
-                    <Text style={styles.heroDescription} numberOfLines={3}>
-                      {visibleHeroItem.overview || 'Experience the highly anticipated release now streaming exclusively on Lumora. Dive into a gripping storyline filled with unforgettable characters and stunning visual designs.'}
-                    </Text>
-                  </Animated.View>
-
-                  {/* Focusable Action Buttons */}
-                  <View style={styles.heroActionsRow}>
-                    <Pressable
-                      focusable={true}
-                      hasTVPreferredFocus={true}
-                      onPress={() => {
-                        const playUrl = visibleHeroItem.type === 'tv'
-                          ? { pathname: '/watch/[type]/[id]', params: { type: visibleHeroItem.type, id: visibleHeroItem.id.toString(), season: '1', episode: '1' } }
-                          : { pathname: '/watch/[type]/[id]', params: { type: visibleHeroItem.type, id: visibleHeroItem.id.toString() } };
-                        router.push(playUrl as any);
-                      }}
-                      style={({ focused }: any) => [
-                        styles.actionButton,
-                        styles.playButton,
-                        focused && styles.playButtonFocused
-                      ]}
-                    >
-                      {({ focused }: any) => (
-                        <>
-                          <Play color={focused ? '#fff' : '#000'} size={24} fill={focused ? '#fff' : '#000'} />
-                          <Text style={[styles.playButtonText, focused && { color: '#fff' }]}>Play</Text>
-                        </>
-                      )}
-                    </Pressable>
-
-                    <Pressable
-                      focusable={true}
-                      onPress={handleToggleWatchlist}
-                      style={({ focused }: any) => [
-                        styles.actionButton,
-                        styles.listButton,
-                        focused && styles.listButtonFocused
-                      ]}
-                    >
-                      {({ focused }: any) => (
-                        <>
-                          {isBookmarked ? (
-                            <Check color={focused ? '#000' : '#e50914'} size={24} strokeWidth={3} />
-                          ) : (
-                            <Plus color={focused ? '#000' : '#fff'} size={24} />
-                          )}
-                          <Text style={[
-                            styles.listButtonText,
-                            focused ? { color: '#000' } : { color: '#fff' },
-                            isBookmarked && !focused && { color: '#e50914' }
-                          ]}>
-                            {isBookmarked ? 'In Watchlist' : 'My List'}
+                    <View style={styles.topNavLinks}>
+                      <TVPressable
+                        style={({ focused }: any) => [
+                          styles.topNavLink,
+                          focused && styles.topNavLinkFocused,
+                          activeFilter === 'all' && styles.topNavLinkActive
+                        ]}
+                        onPress={() => handleFilterChange('all')}
+                      >
+                        {({ focused }: any) => (
+                          <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
+                            Home
                           </Text>
-                        </>
-                      )}
-                    </Pressable>
+                        )}
+                      </TVPressable>
 
-                    <Pressable
-                      focusable={true}
-                      onPress={() => handleMediaPress(visibleHeroItem)}
-                      style={({ focused }: any) => [
-                        styles.actionButton,
-                        styles.listButton,
-                        focused && styles.listButtonFocused
-                      ]}
-                    >
-                      {({ focused }: any) => (
-                        <>
-                          <Info color={focused ? '#000' : '#fff'} size={24} />
-                          <Text style={[
-                            styles.listButtonText,
-                            focused ? { color: '#000' } : { color: '#fff' }
-                          ]}>
-                            Details
+                      <TVPressable
+                        style={({ focused }: any) => [
+                          styles.topNavLink,
+                          focused && styles.topNavLinkFocused,
+                          activeFilter === 'tv' && styles.topNavLinkActive
+                        ]}
+                        onPress={() => handleFilterChange('tv')}
+                      >
+                        {({ focused }: any) => (
+                          <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
+                            TV Shows
                           </Text>
-                        </>
-                      )}
-                    </Pressable>
+                        )}
+                      </TVPressable>
+
+                      <TVPressable
+                        style={({ focused }: any) => [
+                          styles.topNavLink,
+                          focused && styles.topNavLinkFocused,
+                          activeFilter === 'movie' && styles.topNavLinkActive
+                        ]}
+                        onPress={() => handleFilterChange('movie')}
+                      >
+                        {({ focused }: any) => (
+                          <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
+                            Movies
+                          </Text>
+                        )}
+                      </TVPressable>
+
+                      <TVPressable
+                        style={({ focused }: any) => [
+                          styles.topNavLink,
+                          focused && styles.topNavLinkFocused,
+                          activeFilter === 'popular' && styles.topNavLinkActive
+                        ]}
+                        onPress={() => handleFilterChange('popular')}
+                      >
+                        {({ focused }: any) => (
+                          <Text style={[styles.topNavLinkText, focused && styles.topNavLinkTextFocused]}>
+                            New & Popular
+                          </Text>
+                        )}
+                      </TVPressable>
+                    </View>
+                  </View>
+
+                  <View style={styles.heroInfoContainer}>
+                    <Animated.View style={{ opacity: heroOpacity }}>
+                      <Text style={styles.heroTitle} numberOfLines={2}>
+                        {visibleHeroItem.title}
+                      </Text>
+
+                      <View style={styles.heroMetaRow}>
+                        <Text style={styles.heroMetaMatch}>
+                          {visibleHeroItem.vote_average ? `${(visibleHeroItem.vote_average * 10).toFixed(0)}% Match` : '98% Match'}
+                        </Text>
+                        <Text style={styles.heroMetaText}>
+                          {visibleHeroItem.release_date ? visibleHeroItem.release_date.slice(0, 4) : '2024'}
+                        </Text>
+                        <Text style={styles.heroMetaBadge}>
+                          {visibleHeroItem.type === 'tv' ? 'TV-MA' : 'PG-13'}
+                        </Text>
+                        <Text style={styles.heroMetaText}>
+                          {visibleHeroItem.type === 'tv' ? 'Series' : 'Movie'}
+                        </Text>
+                      </View>
+
+                      <Text style={styles.heroDescription} numberOfLines={3}>
+                        {visibleHeroItem.overview || 'Experience the highly anticipated release now streaming exclusively on Lumora. Dive into a gripping storyline filled with unforgettable characters and stunning visual designs.'}
+                      </Text>
+                    </Animated.View>
+
+                    {/* Focusable Action Buttons */}
+                    <View style={styles.heroActionsRow}>
+                      <TVPressable
+                        hasTVPreferredFocus={true}
+                        onPress={() => {
+                          const playUrl = visibleHeroItem.type === 'tv'
+                            ? { pathname: '/watch/[type]/[id]', params: { type: visibleHeroItem.type, id: visibleHeroItem.id.toString(), season: '1', episode: '1' } }
+                            : { pathname: '/watch/[type]/[id]', params: { type: visibleHeroItem.type, id: visibleHeroItem.id.toString() } };
+                          router.push(playUrl as any);
+                        }}
+                        style={({ focused }: any) => [
+                          styles.actionButton,
+                          styles.playButton,
+                          focused && styles.playButtonFocused
+                        ]}
+                      >
+                        {({ focused }: any) => (
+                          <>
+                            <Play color={focused ? '#fff' : '#000'} size={24} fill={focused ? '#fff' : '#000'} />
+                            <Text style={[styles.playButtonText, focused && { color: '#fff' }]}>Play</Text>
+                          </>
+                        )}
+                      </TVPressable>
+ 
+                      <TVPressable
+                        onPress={handleToggleWatchlist}
+                        style={({ focused }: any) => [
+                          styles.actionButton,
+                          styles.listButton,
+                          focused && styles.listButtonFocused
+                        ]}
+                      >
+                        {({ focused }: any) => (
+                          <>
+                            {isBookmarked ? (
+                              <Check color={focused ? '#000' : '#e50914'} size={24} strokeWidth={3} />
+                            ) : (
+                              <Plus color={focused ? '#000' : '#fff'} size={24} />
+                            )}
+                            <Text style={[
+                              styles.listButtonText,
+                              focused ? { color: '#000' } : { color: '#fff' },
+                              isBookmarked && !focused && { color: '#e50914' }
+                            ]}>
+                              {isBookmarked ? 'In Watchlist' : 'My List'}
+                            </Text>
+                          </>
+                        )}
+                      </TVPressable>
+ 
+                      <TVPressable
+                        onPress={() => handleMediaPress(visibleHeroItem)}
+                        style={({ focused }: any) => [
+                          styles.actionButton,
+                          styles.listButton,
+                          focused && styles.listButtonFocused
+                        ]}
+                      >
+                        {({ focused }: any) => (
+                          <>
+                            <Info color={focused ? '#000' : '#fff'} size={24} />
+                            <Text style={[
+                              styles.listButtonText,
+                              focused ? { color: '#000' } : { color: '#fff' }
+                            ]}>
+                              Details
+                            </Text>
+                          </>
+                        )}
+                      </TVPressable>
+                    </View>
                   </View>
                 </View>
               </View>
@@ -495,7 +508,6 @@ export default function TVHomeScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
           style={styles.mainScrollView}
-          focusable={false}
         />
       </View>
     </View>
@@ -509,7 +521,6 @@ const styles = StyleSheet.create({
   },
   contentWrapper: {
     flex: 1,
-    marginLeft: 80, // Matches collapsed SideNavigation width
     backgroundColor: '#000',
   },
   scrollContent: {
@@ -517,9 +528,17 @@ const styles = StyleSheet.create({
   },
   heroSection: {
     width: '100%',
-    height: height * 0.68, // Expanded slightly to fit top bar logo
     position: 'relative',
     backgroundColor: '#000',
+  },
+  heroContentContainer: {
+    width: '100%',
+    height: '100%',
+    paddingTop: 54, // Expanded to respect top TV safe margin (54px)
+    paddingHorizontal: 54, // Expanded to respect right TV safe margin (54px)
+    paddingBottom: 40,
+    justifyContent: 'space-between',
+    zIndex: 5,
   },
   heroBackdrop: {
     width: '100%',
@@ -545,13 +564,8 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   topNavBar: {
-    position: 'absolute',
-    left: 40,
-    top: 40,
-    right: 40,
     flexDirection: 'row',
     alignItems: 'center',
-    zIndex: 100,
     gap: 40,
   },
   topBarLogoText: {
@@ -560,6 +574,16 @@ const styles = StyleSheet.create({
     color: '#e50914',
     fontFamily: 'Outfit-Black',
     letterSpacing: -1.5,
+  },
+  topBarLogoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  topBarLogoIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
   },
   topNavLinks: {
     flexDirection: 'row',
@@ -593,11 +617,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   heroInfoContainer: {
-    position: 'absolute',
-    left: 40,
-    bottom: 30,
     width: '50%', // Occupies left half of landscape layout
-    zIndex: 5,
   },
   heroTitle: {
     fontSize: 48,
@@ -705,13 +725,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '900',
     color: '#fff',
-    paddingHorizontal: 40,
+    paddingHorizontal: 54, // Shifted to align with TV safe area
     marginBottom: Spacing.two,
     fontFamily: 'Outfit-Bold',
   },
   rowScroll: {
-    paddingLeft: 40,
-    paddingRight: 40,
+    paddingLeft: 54, // Shifted to align with TV safe area
+    paddingRight: 54,
     paddingVertical: 18, // Extra vertical space so scaled cards are not clipped at top/bottom
     gap: 16,
   },
@@ -722,19 +742,22 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#141414',
     position: 'relative',
-    borderWidth: 3,
-    borderColor: 'transparent',
   },
   cardContainerFocused: {
     zIndex: 10,
-    borderColor: '#e50914',
-    borderWidth: 4,
-    backgroundColor: '#141414', // Dark background so card is not solid red
+    backgroundColor: '#141414',
     shadowColor: '#e50914',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
     elevation: 12, // Android TV shadow depth
+  },
+  cardFocusedBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 4,
+    borderColor: '#e50914',
+    borderRadius: 8,
+    zIndex: 30,
   },
   cardInner: {
     width: '100%',

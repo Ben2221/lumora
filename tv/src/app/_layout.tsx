@@ -20,9 +20,22 @@ import {
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { SideNavigation } from '@/components/SideNavigation';
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 export default function RootLayout() {
   const pathname = usePathname() || '/';
+
+  // Lock orientation to Landscape for TV UI
+  React.useEffect(() => {
+    async function lockLandscape() {
+      try {
+        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+      } catch (err) {
+        console.warn('[TV Layout] Failed to lock orientation to landscape:', err);
+      }
+    }
+    lockLandscape();
+  }, []);
 
   // Enable spatial D-pad navigation on Web for easy browser testing
   React.useEffect(() => {
@@ -194,7 +207,7 @@ export default function RootLayout() {
       <AnimatedSplashOverlay />
       <View style={styles.rootContainer}>
         {showSidebar && <SideNavigation activeTab={activeTab} />}
-        <View style={styles.mainContent}>
+        <View style={[styles.mainContent, showSidebar && { marginLeft: 108 }]}>
           <Stack 
             screenOptions={{ 
               headerShown: false,

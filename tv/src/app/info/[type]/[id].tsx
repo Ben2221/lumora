@@ -1,24 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  Pressable, 
-  Dimensions, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Dimensions,
   ActivityIndicator,
   Animated,
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { TVPressable } from '@/components/TVPressable';
 import { Image } from 'expo-image';
 import { Play, Plus, Check, Star, Calendar, Clock, ArrowLeft } from 'lucide-react-native';
-import { 
-  trendingMovies, 
-  newReleases, 
-  mockTVShows, 
-  MediaItem 
+import {
+  trendingMovies,
+  newReleases,
+  mockTVShows,
+  MediaItem
 } from '@/constants/mockData';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { Spacing } from '@/constants/theme';
@@ -41,7 +42,7 @@ export default function TVInfoScreen() {
   // Fetch real media details
   useEffect(() => {
     if (!id || !type) return;
-    
+
     let active = true;
     const fetchDetails = async () => {
       try {
@@ -141,7 +142,7 @@ export default function TVInfoScreen() {
     }
   };
 
-  const playUrlParams = type === 'tv' 
+  const playUrlParams = type === 'tv'
     ? { pathname: '/watch/[type]/[id]', params: { type, id, season: selectedSeason.toString(), episode: '1' } }
     : { pathname: '/watch/[type]/[id]', params: { type, id } };
 
@@ -168,10 +169,10 @@ export default function TVInfoScreen() {
     };
 
     return (
-      <Animated.View 
+      <Animated.View
         style={[
-          { 
-            transform: [{ scale }], 
+          {
+            transform: [{ scale }],
             zIndex: isFocused ? 20 : 1,
           },
           Platform.OS === 'android' && {
@@ -179,8 +180,7 @@ export default function TVInfoScreen() {
           }
         ]}
       >
-        <Pressable
-          focusable={true}
+        <TVPressable
           onFocus={handleFocus}
           onBlur={handleBlur}
           onPress={onPress}
@@ -190,13 +190,13 @@ export default function TVInfoScreen() {
           ]}
         >
           <View style={styles.similarCardInner}>
-            <Image 
-              source={{ uri: item.poster_path }} 
-              style={styles.similarPoster} 
+            <Image
+              source={{ uri: item.poster_path }}
+              style={styles.similarPoster}
               contentFit="cover"
             />
           </View>
-        </Pressable>
+        </TVPressable>
       </Animated.View>
     );
   };
@@ -208,15 +208,16 @@ export default function TVInfoScreen() {
         source={{ uri: media.backdrop_path }}
         style={styles.backdropImage}
         contentFit="cover"
+        pointerEvents="none"
       />
       <LinearGradient
         colors={['rgba(0,0,0,0.92)', 'rgba(0,0,0,0.85)', 'rgba(0,0,0,0.95)']}
         style={styles.backdropOverlay}
+        pointerEvents="none"
       />
 
       {/* Floating Back Button (Focusable) */}
-      <Pressable
-        focusable={true}
+      <TVPressable
         onPress={() => router.back()}
         style={({ focused }: any) => [
           styles.backButton,
@@ -226,7 +227,7 @@ export default function TVInfoScreen() {
         {({ focused }: any) => (
           <ArrowLeft color={focused ? '#000' : '#fff'} size={24} />
         )}
-      </Pressable>
+      </TVPressable>
 
       <View style={styles.contentLayout}>
         {/* LEFT COLUMN: Media details & action buttons */}
@@ -250,7 +251,7 @@ export default function TVInfoScreen() {
             <View style={styles.metaBadge}>
               <Clock color="#B0B4BA" size={14} />
               <Text style={styles.metaBadgeText}>
-                {media.type === 'tv' 
+                {media.type === 'tv'
                   ? `${media.number_of_seasons || media.seasons?.length || 1} Seasons`
                   : `${media.runtime || 120} min`
                 }
@@ -264,8 +265,8 @@ export default function TVInfoScreen() {
 
           {/* Action Buttons */}
           <View style={styles.actionsRow}>
-            <Pressable
-              focusable={true}
+            <TVPressable
+              hasTVPreferredFocus={true}
               style={({ focused }: any) => [
                 styles.actionButton,
                 styles.playButton,
@@ -279,10 +280,9 @@ export default function TVInfoScreen() {
                   <Text style={[styles.playButtonText, focused && { color: '#fff' }]}>Play</Text>
                 </>
               )}
-            </Pressable>
-
-            <Pressable
-              focusable={true}
+            </TVPressable>
+ 
+            <TVPressable
               style={({ focused }: any) => [
                 styles.actionButton,
                 styles.listButton,
@@ -306,7 +306,7 @@ export default function TVInfoScreen() {
                   </Text>
                 </>
               )}
-            </Pressable>
+            </TVPressable>
           </View>
 
           {media.director && (
@@ -322,21 +322,19 @@ export default function TVInfoScreen() {
           {media.type === 'tv' ? (
             <View style={styles.tvSection}>
               <Text style={styles.sectionTitle}>Episodes</Text>
-              
+
               {/* Season Selection Pills */}
               {media.seasons && media.seasons.length > 1 && (
-                <ScrollView 
-                  horizontal 
+                <ScrollView
+                  horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.seasonsPillScroll}
-                  focusable={false}
                 >
                   {media.seasons.map((season) => {
                     const isSelected = selectedSeason === season.season_number;
                     return (
-                      <Pressable
+                      <TVPressable
                         key={season.season_number}
-                        focusable={true}
                         style={({ focused }: any) => [
                           styles.seasonPill,
                           isSelected && styles.seasonPillSelected,
@@ -346,33 +344,31 @@ export default function TVInfoScreen() {
                       >
                         {({ focused }: any) => (
                           <Text style={[
-                            styles.seasonPillText, 
+                            styles.seasonPillText,
                             isSelected && styles.seasonPillTextSelected,
                             focused && styles.seasonPillTextFocused
                           ]}>
                             {season.name || `Season ${season.season_number}`}
                           </Text>
                         )}
-                      </Pressable>
+                      </TVPressable>
                     );
                   })}
                 </ScrollView>
               )}
 
               {/* Episodes List */}
-              <ScrollView 
+              <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.episodesScrollContainer}
                 style={{ flex: 1 }}
-                focusable={false}
               >
                 {episodesLoading ? (
                   <ActivityIndicator size="small" color="#e50914" style={{ marginTop: 20 }} />
                 ) : (
                   episodes.map((ep, idx) => (
-                    <Pressable
+                    <TVPressable
                       key={ep.id || idx}
-                      focusable={true}
                       style={({ focused }: any) => [
                         styles.episodeRow,
                         focused && styles.episodeRowFocused
@@ -380,11 +376,11 @@ export default function TVInfoScreen() {
                       onPress={() => {
                         router.push({
                           pathname: '/watch/[type]/[id]',
-                          params: { 
-                            type: 'tv', 
-                            id: media.id.toString(), 
-                            season: selectedSeason.toString(), 
-                            episode: ep.episode_number.toString() 
+                          params: {
+                            type: 'tv',
+                            id: media.id.toString(),
+                            season: selectedSeason.toString(),
+                            episode: ep.episode_number.toString()
                           }
                         } as any);
                       }}
@@ -393,9 +389,9 @@ export default function TVInfoScreen() {
                         <View style={styles.episodeRowInner}>
                           <Text style={[styles.episodeNum, focused && styles.episodeTextFocused]}>{ep.episode_number}</Text>
                           {ep.still_path ? (
-                            <Image 
-                              source={{ uri: ep.still_path }} 
-                              style={styles.episodeImage} 
+                            <Image
+                              source={{ uri: ep.still_path }}
+                              style={styles.episodeImage}
                               contentFit="cover"
                             />
                           ) : (
@@ -413,27 +409,25 @@ export default function TVInfoScreen() {
                           </View>
                         </View>
                       )}
-                    </Pressable>
+                    </TVPressable>
                   ))
                 )}
               </ScrollView>
             </View>
           ) : (
             // Movie section: Cast + Similar movies
-            <ScrollView 
-              showsVerticalScrollIndicator={false} 
+            <ScrollView
+              showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.movieDetailsScroll}
               style={{ flex: 1 }}
-              focusable={false}
             >
               {media.cast && media.cast.length > 0 && (
                 <View style={styles.sectionContainer}>
                   <Text style={styles.sectionTitle}>Cast & Crew</Text>
-                  <ScrollView 
-                    horizontal 
+                  <ScrollView
+                    horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.castScroll}
-                    focusable={false}
                   >
                     {media.cast.slice(0, 10).map((actor, idx) => (
                       <View key={idx} style={styles.castCard}>
@@ -455,12 +449,11 @@ export default function TVInfoScreen() {
               {media.similar && media.similar.length > 0 && (
                 <View style={styles.sectionContainer}>
                   <Text style={styles.sectionTitle}>More Like This</Text>
-                  <ScrollView 
-                    horizontal 
+                  <ScrollView
+                    horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.similarScroll}
                     style={{ overflow: 'visible' }}
-                    focusable={false}
                   >
                     {media.similar.slice(0, 10).map((similarItem) => (
                       <SimilarMovieCard
@@ -518,8 +511,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    left: 40,
-    top: 40,
+    left: 54, // Shifted to align with TV safe area
+    top: 54, // Shifted to align with TV safe area
     width: 48,
     height: 48,
     borderRadius: 24,
@@ -538,8 +531,8 @@ const styles = StyleSheet.create({
   contentLayout: {
     flex: 1,
     flexDirection: 'row',
-    paddingTop: 110, // Leave room for back button
-    paddingHorizontal: 40,
+    paddingTop: 120, // Increased to accommodate shifted back button
+    paddingHorizontal: 54, // Shifted to align with TV safe area
   },
   leftColumn: {
     width: '45%',

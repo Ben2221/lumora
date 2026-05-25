@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TextInput, 
-  FlatList, 
-  Pressable, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  FlatList,
+  Pressable,
   Dimensions,
   Animated,
   Platform,
@@ -13,32 +13,37 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Search as SearchIcon, X } from 'lucide-react-native';
-import { 
-  trendingMovies, 
-  newReleases, 
-  mockTVShows, 
-  MediaItem 
+import { TVPressable } from '@/components/TVPressable';
+import {
+  trendingMovies,
+  newReleases,
+  mockTVShows,
+  MediaItem
 } from '@/constants/mockData';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { searchMedia, getHomeLists } from '@/services/tmdb';
 
-const { width } = Dimensions.get('window');
-const availableWidth = width - 80 - 80; // subtracting sidebar (80) and horizontal padding (40 * 2)
-const COLUMN_WIDTH = (availableWidth - 16 * 5) / 6; // 6 columns on TV
+import { useWindowDimensions } from 'react-native';
 
 const allMedia = [...trendingMovies, ...newReleases, ...mockTVShows];
 
 export default function TVExploreScreen() {
   const theme = useTheme();
   const router = useRouter();
+  const inputRef = useRef<TextInput>(null);
+  
+  const { width } = useWindowDimensions();
+  const availableWidth = width - 108 - 108; // subtracting sidebar (108) and horizontal padding (54 * 2)
+  const COLUMN_WIDTH = (availableWidth - 16 * 5) / 6; // 6 columns on TV
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MediaItem[]>([]);
   const [popularMedia, setPopularMedia] = useState<MediaItem[]>([]);
   const [isFocused, setIsFocused] = useState(false);
+  const [isClearFocused, setIsClearFocused] = useState(false);
 
-  const displayedResults = query.trim().length < 2 
+  const displayedResults = query.trim().length < 2
     ? (popularMedia.length > 0 ? popularMedia : allMedia.slice(0, 10))
     : results;
 
@@ -75,8 +80,8 @@ export default function TVExploreScreen() {
         }
       } catch (err) {
         console.warn('[TV Search] Fallback to local search filter:', err);
-        const filtered = allMedia.filter(item => 
-          item.title.toLowerCase().includes(trimmed.toLowerCase()) || 
+        const filtered = allMedia.filter(item =>
+          item.title.toLowerCase().includes(trimmed.toLowerCase()) ||
           item.overview.toLowerCase().includes(trimmed.toLowerCase())
         );
         const unique = filtered.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
@@ -120,24 +125,26 @@ export default function TVExploreScreen() {
     };
 
     return (
-      <Animated.View 
+      <Animated.View
         style={[
-          { 
-            transform: [{ scale }], 
+          {
+            transform: [{ scale }],
             zIndex: cardFocused ? 20 : 1,
+            width: COLUMN_WIDTH,
+            height: COLUMN_WIDTH * 1.5,
           },
           Platform.OS === 'android' && {
             elevation: cardFocused ? 20 : 0,
           }
         ]}
       >
-        <Pressable
-          focusable={true}
+        <TVPressable
           onFocus={handleFocus}
           onBlur={handleBlur}
           onPress={onPress}
           style={({ focused }: any) => [
             styles.card,
+            { width: '100%', height: '100%', margin: 0 },
             focused && styles.cardFocused
           ]}
         >
@@ -158,7 +165,7 @@ export default function TVExploreScreen() {
               )}
             </View>
           )}
-        </Pressable>
+        </TVPressable>
       </Animated.View>
     );
   };
@@ -173,14 +180,20 @@ export default function TVExploreScreen() {
       <View style={styles.contentWrapper}>
         {/* Search Header Area */}
         <View style={styles.header}>
-          <View
-            style={[
+          <TVPressable
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            onPress={() => {
+              inputRef.current?.focus();
+            }}
+            style={({ focused }: any) => [
               styles.searchBox,
-              isFocused && styles.searchBoxFocused
+              (focused || isClearFocused) && styles.searchBoxFocused
             ]}
           >
-            <SearchIcon color={isFocused ? '#e50914' : '#888'} size={24} />
+            <SearchIcon color={(isFocused || isClearFocused) ? '#e50914' : '#888'} size={24} />
             <TextInput
+              ref={inputRef}
               style={styles.input}
               placeholder="Search movies, series, genres..."
               placeholderTextColor="#60646C"
@@ -188,21 +201,27 @@ export default function TVExploreScreen() {
               onChangeText={setQuery}
               autoCapitalize="none"
               returnKeyType="search"
-              autoFocus={true}
-              focusable={true}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
+              focusable={false}
+              showSoftInputOnFocus={true}
+              onSubmitEditing={() => inputRef.current?.blur()}
             />
             {query.length > 0 && (
-              <Pressable 
-                focusable={true}
-                onPress={() => setQuery('')}
-                style={styles.clearButton}
+              <TVPressable
+                onFocus={() => setIsClearFocused(true)}
+                onBlur={() => setIsClearFocused(false)}
+                onPress={() => {
+                  setQuery('');
+                  setTimeout(() => inputRef.current?.focus(), 50);
+                }}
+                style={({ focused }: any) => [
+                  styles.clearButton,
+                  focused && { backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 12 }
+                ]}
               >
                 <X color="#aaa" size={20} />
-              </Pressable>
+              </TVPressable>
             )}
-          </View>
+          </TVPressable>
         </View>
 
         {/* Results Header Label */}
@@ -223,7 +242,6 @@ export default function TVExploreScreen() {
           columnWrapperStyle={styles.gridRow}
           showsVerticalScrollIndicator={false}
           style={styles.gridList}
-          focusable={false}
         />
       </View>
     </View>
@@ -237,9 +255,8 @@ const styles = StyleSheet.create({
   },
   contentWrapper: {
     flex: 1,
-    marginLeft: 80, // Collapsed SideNavigation width
-    paddingHorizontal: 24,
-    paddingTop: 30,
+    paddingHorizontal: 54, // Safe TV horizontal margin (54px)
+    paddingTop: 54, // Safe TV top margin (54px)
     backgroundColor: '#000',
   },
   header: {
@@ -291,8 +308,6 @@ const styles = StyleSheet.create({
     marginBottom: 4, // Reduced to offset the vertical padding
   },
   card: {
-    width: COLUMN_WIDTH,
-    height: COLUMN_WIDTH * 1.5,
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#141414',

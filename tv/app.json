@@ -16,9 +16,17 @@
         "backgroundColor": "#000000",
         "foregroundImage": "./assets/images/icon.png"
       },
+      "banner": "./assets/images/banner.png",
       "predictiveBackGestureEnabled": false,
       "package": "com.savvy2221.lumoratv",
-      "versionCode": 2
+      "versionCode": 2,
+      "statusBar": {
+        "hidden": true,
+        "translucent": true
+      },
+      "navigationBar": {
+        "visible": "never"
+      }
     },
     "web": {
       "output": "static",

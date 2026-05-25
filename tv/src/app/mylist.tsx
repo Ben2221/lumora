@@ -8,12 +8,15 @@ import { MediaItem } from '@/constants/mockData';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { SideNavigation } from '@/components/SideNavigation';
+import { TVPressable } from '@/components/TVPressable';
 
-const { width } = Dimensions.get('window');
-const availableWidth = width - 80 - 80; // subtracting sidebar (80) and horizontal padding (40 * 2)
-const COLUMN_WIDTH = (availableWidth - 16 * 4) / 5; // 5 columns on TV
+import { useWindowDimensions } from 'react-native';
 
 export default function TVMyListScreen() {
+  const { width } = useWindowDimensions();
+  const availableWidth = width - 108 - 108; // subtracting sidebar (108) and horizontal padding (54 * 2)
+  const COLUMN_WIDTH = (availableWidth - 16 * 4) / 5; // 5 columns on TV
+
   const { watchlist, refreshWatchlist } = useWatchlist();
   const theme = useTheme();
   const router = useRouter();
@@ -60,19 +63,21 @@ export default function TVMyListScreen() {
           { 
             transform: [{ scale }], 
             zIndex: isFocused ? 20 : 1,
+            width: COLUMN_WIDTH,
+            height: COLUMN_WIDTH * 1.5,
           },
           Platform.OS === 'android' && {
             elevation: isFocused ? 20 : 0,
           }
         ]}
       >
-        <Pressable
-          focusable={true}
+        <TVPressable
           onFocus={handleFocus}
           onBlur={handleBlur}
           onPress={onPress}
           style={({ focused }: any) => [
             styles.card,
+            { width: '100%', height: '100%', margin: 0 },
             focused && styles.cardFocused
           ]}
         >
@@ -91,7 +96,7 @@ export default function TVMyListScreen() {
               )}
             </View>
           )}
-        </Pressable>
+        </TVPressable>
       </Animated.View>
     );
   };
@@ -113,8 +118,7 @@ export default function TVMyListScreen() {
             <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
               Your watchlist is empty. Add movies and series from the Home screen.
             </Text>
-            <Pressable
-              focusable={true}
+            <TVPressable
               style={({ focused }: any) => [
                 styles.exploreButton,
                 focused && styles.exploreButtonFocused
@@ -129,7 +133,7 @@ export default function TVMyListScreen() {
                   Find Something to Watch
                 </Text>
               )}
-            </Pressable>
+            </TVPressable>
           </View>
         ) : (
           <FlatList
@@ -144,7 +148,6 @@ export default function TVMyListScreen() {
             columnWrapperStyle={styles.row}
             showsVerticalScrollIndicator={false}
             style={styles.gridList}
-            focusable={false}
           />
         )}
       </View>
@@ -159,9 +162,8 @@ const styles = StyleSheet.create({
   },
   contentWrapper: {
     flex: 1,
-    marginLeft: 80, // Collapsed SideNavigation width
-    paddingHorizontal: 40,
-    paddingTop: 30,
+    paddingHorizontal: 54, // Safe TV horizontal margin (54px)
+    paddingTop: 54, // Safe TV top margin (54px)
     backgroundColor: '#000',
   },
   header: {
@@ -185,8 +187,6 @@ const styles = StyleSheet.create({
     marginBottom: 4, // Reduced to offset the vertical padding
   },
   card: {
-    width: COLUMN_WIDTH,
-    height: COLUMN_WIDTH * 1.5,
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#141414',
