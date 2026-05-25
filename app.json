@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "eafacaa0-f1c2-49e5-816d-77491624f6d5"
+      }
+    },
+    "android": {
+      "package": "com.savvy2221.lumora"
+    }
+  }
+}
