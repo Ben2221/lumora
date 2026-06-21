@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "Lumora",
+    "slug": "lumora-tablet",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/images/icon.png",
+    "scheme": "lumora-tablet",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "icon": "./assets/images/icon.png"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#070707",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.savvy2221.lumora.tablet"
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000000",
+          "android": {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 140
+          }
+        }
+      ],
+      "expo-font",
+      "expo-web-browser",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "buildArchs": [
+              "arm64-v8a"
+            ]
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "f806862c-e6fe-48a6-95c9-3cd0ca8f1686"
+      }
+    }
+  }
+}
